@@ -576,6 +576,7 @@ function loadDemo(){
   tracks=DEMO.map(t=>({...t,genres:[...(t.genres||[])]}));
   artists=DEMO_ARTISTS.map(a=>({...a}));
   sts();ren();show();renderArtists();
+  save();
   toast('15 Demo Tracks geladen','grn');
 }
 
@@ -594,7 +595,7 @@ function proc(fs){
     const nm=f.name.replace(/\.[^.]+$/,''),p=nm.split(' - ');
     return{id:n+i,title:p[1]||nm,artist:p[0]||'Unknown',bpm:null,genres:[],energy:null,role:null,vibe:[],key:null,dur:null,a:false,cover:null,lic:'unknown',licNote:'',isOwn:false,ownArtist:null};
   })];
-  sts();ren();show();toast(`${fs.length} Tracks importiert`);
+  sts();ren();show();save();toast(`${fs.length} Tracks importiert`);
 }
 
 /* ── COVER ── */
@@ -760,6 +761,7 @@ function addArtist(){
   if(!name||!name.trim())return;
   artists.push({id:'a'+Date.now(),name:name.trim(),tracks:0,cover:null,bio:'',verified:false});
   renderArtists();sts();
+  save();
   toast('Artist hinzugefügt','grn');
 }
 
@@ -868,8 +870,8 @@ function updGenres(id,val){
   const t=tracks.find(t=>t.id===id);
   if(t){t.genres=val.split(',').map(s=>s.trim()).filter(Boolean);ren();}
 }
-function uE(id,v){const t=tracks.find(t=>t.id===id);if(t){t.energy=+v;const e=document.getElementById('ev2');if(e)e.textContent=v;ren()}}
-function sR(id,r){const t=tracks.find(t=>t.id===id);if(t){t.role=r;rp();ren();sts()}}
+function uE(id,v){const t=tracks.find(t=>t.id===id);if(t){t.energy=+v;const e=document.getElementById('ev2');if(e)e.textContent=v;ren();save();}}
+function sR(id,r){const t=tracks.find(t=>t.id===id);if(t){t.role=r;rp();ren();sts();save();}}
 function tV(id,v){
   const t=tracks.find(t=>t.id===id);if(!t)return;
   if(!t.vibe)t.vibe=[];
@@ -984,7 +986,7 @@ function toast(msg,type){
   setTimeout(()=>el.classList.remove('show'),2500);
 }
 
-sts();buildSet();
+load();sts();buildSet();
 // LICENSE CHECK
 function checkLicenses(){const warn=tracks.filter(t=>t.lic==='none'||t.lic==='unknown');if(!warn.length){toast('All licensed ✓','grn');return;}const html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px"><div style="background:var(--paper2);padding:12px;border-left:4px solid var(--green)"><div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3)">Compliant</div><div style="font-size:24px;font-weight:600;color:var(--green)">'+tracks.filter(t=>t.lic!=='none'&&t.lic!=='unknown').length+'</div></div></div>';document.getElementById('lic-modal-body').innerHTML=html;if(!document.getElementById('licmod')){const m=document.createElement('div');m.id='licmod';m.className='modal';m.innerHTML='<div class="modal-content" style="max-width:380px"><button style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:20px;cursor:pointer" onclick="closeCheckLic()">×</button><div style="font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:16px">License Status</div><div id="lic-modal-body"></div></div>';document.body.appendChild(m);}document.getElementById('licmod').classList.add('open');}
 function closeCheckLic(){const m=document.getElementById('licmod');if(m)m.classList.remove('open');}
