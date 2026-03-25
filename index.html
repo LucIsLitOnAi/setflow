@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SetFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:  #f2efe8;
+  --paper2: #e9e5dc;
+  --paper3: #dfd9ce;
+  --ink:    #1a1814;
+  --ink2:   #4a4640;
+  --ink3:   #8a8580;
+  --ink4:   #c0bbb4;
+  --rule:   rgba(26,24,20,0.10);
+  --rule2:  rgba(26,24,20,0.20);
+  --red:    #c0392b;
+  --green:  #2a7a4a;
+  --amber:  #8a5a10;
+  --blue:   #1a5a8a;
+  --M: 'IBM Plex Mono', monospace;
+  --S: 'IBM Plex Sans', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--paper);color:var(--ink);font-family:var(--M);font-size:12px;line-height:1.5}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:999;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)' opacity='0.055'/%3E%3C/svg%3E");
+}
+.shell{display:flex;height:100vh;position:relative;z-index:1}
+
+/* ── SIDEBAR ── */
+.sb{width:200px;min-width:200px;background:var(--paper2);border-right:1px solid var(--rule2);display:flex;flex-direction:column}
+.wm{padding:17px 16px 13px;border-bottom:2px solid var(--ink)}
+.wm-row{display:flex;align-items:center;gap:7px;margin-bottom:3px}
+.wm-name{font-family:var(--M);font-size:15px;font-weight:600;letter-spacing:-.5px;text-transform:uppercase}
+.wm-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0}
+.wm-sub{font-size:9px;color:var(--ink3);letter-spacing:2px;text-transform:uppercase;font-family:var(--S)}
+
+.nav{flex:1;padding:5px 0;overflow-y:auto}
+.nl{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--ink3);padding:11px 16px 4px;font-family:var(--S);font-weight:500}
+.ni{display:flex;align-items:center;padding:7px 16px;cursor:pointer;color:var(--ink2);font-size:11px;letter-spacing:.2px;transition:all .1s;border-left:2px solid transparent;font-family:var(--M)}
+.ni:hover{color:var(--ink);background:var(--paper3)}
+.ni.on{color:var(--ink);background:var(--paper);border-left-color:var(--red);font-weight:500}
+.nd{width:5px;height:5px;border-radius:50%;border:1px solid currentColor;flex-shrink:0;margin-right:8px;transition:background .1s}
+.ni:hover .nd,.ni.on .nd{background:currentColor}
+.nc{margin-left:auto;font-size:10px;color:var(--ink3)}
+
+/* license warning in sidebar */
+.ni-warn{background:rgba(192,57,43,0.06)!important}
+.ni-warn .nc{color:var(--red)!important}
+
+.sf{padding:10px 0;border-top:1px solid var(--rule2);display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule2)}
+.st{background:var(--paper2);padding:9px 12px}
+.sn{font-family:var(--M);font-size:15px;font-weight:600;color:var(--ink);line-height:1;margin-bottom:2px}
+.sl{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);font-family:var(--S)}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:48px;min-height:48px;display:flex;align-items:center;padding:0 14px;gap:7px;border-bottom:1px solid var(--rule2);background:var(--paper)}
+.tb-t{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;flex:1}
+.tb-s{font-weight:300;color:var(--ink3);letter-spacing:0;text-transform:none;font-size:10px;margin-left:6px}
+
+.btn{padding:5px 11px;font-size:9px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .1s;font-family:var(--M);display:flex;align-items:center;gap:5px;white-space:nowrap;border-radius:0}
+.b-out{background:transparent;color:var(--ink2);border:1px solid var(--rule2)}
+.b-out:hover{background:var(--paper2);color:var(--ink);border-color:var(--ink2)}
+.b-ink{background:var(--ink);color:var(--paper);border:1px solid var(--ink)}
+.b-ink:hover{background:var(--ink2)}
+.b-red{background:var(--red);color:#fff;border:1px solid var(--red)}
+.b-red:hover{background:#a93226}
+.b-grn{background:var(--green);color:#fff;border:1px solid var(--green)}
+.b-grn:hover{background:#1f5c38}
+
+.ct{flex:1;overflow-y:auto}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--ink4)}
+
+/* ── DROP ZONE ── */
+.dz{margin:18px;border:1px dashed var(--rule2);padding:36px 20px;text-align:center;cursor:pointer;transition:all .15s;background:var(--paper2)}
+.dz:hover,.dz.drag{border-color:var(--ink);border-style:solid;background:var(--paper3)}
+.dz input{display:none}
+.dz-vinyl{margin:0 auto 14px;width:46px;height:46px}
+.dz-vinyl svg{width:46px;height:46px;opacity:.28}
+.dz h3{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px}
+.dz p{color:var(--ink3);font-size:11px;line-height:1.8;font-family:var(--S)}
+.dz-tag{display:inline-block;margin-top:10px;padding:3px 10px;border:1px solid var(--rule2);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);font-family:var(--M)}
+
+/* ── FILTER BAR ── */
+.fb{display:none;align-items:center;border-bottom:1px solid var(--rule);padding:0 14px;height:36px;gap:0;overflow-x:auto}
+.fb.vis{display:flex}
+.fp{padding:0 11px;height:36px;display:flex;align-items:center;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;color:var(--ink3);border:none;background:transparent;font-family:var(--M);transition:all .1s;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.fp:hover{color:var(--ink)}
+.fp.on{color:var(--ink);border-bottom-color:var(--ink);font-weight:500}
+.fp.on-red{color:var(--red);border-bottom-color:var(--red);font-weight:500}
+.fp.on-grn{color:var(--green);border-bottom-color:var(--green);font-weight:500}
+.fp.on-amb{color:var(--amber);border-bottom-color:var(--amber);font-weight:500}
+.srch{margin-left:auto;background:transparent;border:none;border-bottom:1px solid var(--rule2);color:var(--ink);font-family:var(--M);font-size:11px;padding:4px 6px;width:150px;outline:none;transition:border-color .15s}
+.srch:focus{border-bottom-color:var(--ink)}
+.srch::placeholder{color:var(--ink4)}
+
+/* ── AI BAR ── */
+.ab{display:none;border-bottom:1px solid var(--rule);padding:7px 14px;background:var(--paper2);align-items:center;gap:10px}
+.ab.vis{display:flex}
+.ab-txt{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ink2)}
+.ab-s{font-size:10px;color:var(--ink3)}
+.pt{flex:1;height:1px;background:var(--rule2)}
+.pf{height:1px;background:var(--ink);transition:width .3s}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse}
+.tbl thead{border-bottom:1px solid var(--rule2);position:sticky;top:0;background:var(--paper);z-index:2}
+.tbl th{text-align:left;font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--ink3);padding:9px 10px;font-weight:500;font-family:var(--S)}
+.tbl tbody tr{border-bottom:1px solid var(--rule);transition:background .08s;cursor:pointer}
+.tbl tbody tr:hover{background:var(--paper2)}
+.tbl tbody tr.sel{background:var(--paper3)!important}
+.tbl tbody tr.sel .td-num{border-left:2px solid var(--red);padding-left:9px}
+.tbl td{padding:7px 10px;vertical-align:middle}
+.td-num{font-size:9px;color:var(--ink3);width:28px;font-family:var(--M);padding-right:0!important}
+.td-cover{width:44px;padding:5px 6px 5px 4px!important}
+
+/* cover / vinyl */
+.cover-wrap{width:38px;height:38px;flex-shrink:0;border:1px solid var(--rule2);overflow:hidden}
+.cover-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.cover-vinyl{width:38px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* license badge in table */
+.lic-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 7px;font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  font-family:var(--M);border:1px solid currentColor;white-space:nowrap;
+}
+.lic-own{color:var(--green)}
+.lic-licensed{color:var(--blue)}
+.lic-promo{color:var(--amber)}
+.lic-none{color:var(--red)}
+.lic-unknown{color:var(--ink3)}
+
+/* license dot indicator */
+.lic-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.ld-own{background:var(--green)}
+.ld-licensed{background:var(--blue)}
+.ld-promo{background:var(--amber)}
+.ld-none{background:var(--red)}
+.ld-unknown{background:var(--ink4)}
+
+.tn{font-size:12px;font-weight:500;letter-spacing:-.1px;font-family:var(--M)}
+.ta{font-size:11px;color:var(--ink2);margin-top:2px;font-family:var(--S);font-weight:400}
+.tbpm{font-family:var(--M);font-size:12px;font-weight:500}
+.z1{color:var(--ink3)}.z2{color:var(--ink2)}.z3{color:var(--ink)}.z4{color:var(--ink);font-weight:600}.z5{color:var(--red)}
+
+/* chips */
+.ch{display:inline-block;padding:1px 6px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-family:var(--M);margin:1px 2px 1px 0;border:1px solid currentColor;font-weight:500}
+.cg{color:var(--ink4)}
+.co{color:var(--green);background:rgba(42,122,74,.05)}
+.cb{color:var(--blue);background:rgba(26,90,138,.05)}
+.cp{color:var(--ink);border-color:var(--ink2)}
+.cc{color:var(--amber);background:rgba(138,90,26,.05)}
+.cd{color:#7a6a10;background:rgba(122,106,16,.05)}
+.cn{color:#4a2a7a;background:rgba(74,42,122,.05)}
+.ck{color:var(--red);background:rgba(192,57,43,.04)}
+.cm{color:var(--green);background:rgba(42,122,74,.04)}
+.ct2{color:var(--amber);background:rgba(138,90,26,.04)}
+
+/* multi-genre chip */
+.ch-genre{color:var(--ink2);border-color:var(--ink4);background:transparent}
+.ch-subgenre{color:var(--ink3);border-color:var(--rule2);background:transparent;font-size:8px}
+
+.eb{display:flex;align-items:center;gap:6px}
+.et{width:46px;height:2px;background:var(--rule2)}
+.ef{height:100%;transition:width .3s}
+.ev{font-family:var(--M);font-size:10px;color:var(--ink3);min-width:18px}
+
+/* ── ARTISTS VIEW ── */
+.artist-grid{padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.artist-card{
+  background:var(--paper2);border:1px solid var(--rule2);
+  padding:14px;cursor:pointer;transition:all .12s;
+  display:flex;flex-direction:column;gap:8px;
+}
+.artist-card:hover{background:var(--paper3);border-color:var(--ink2)}
+.artist-avatar{
+  width:48px;height:48px;margin:0 auto;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--rule2);background:var(--paper3);
+  font-family:var(--M);font-size:16px;font-weight:600;color:var(--ink2);
+}
+.artist-name{font-size:12px;font-weight:600;text-align:center;font-family:var(--M);letter-spacing:-.2px}
+.artist-meta{font-size:10px;color:var(--ink3);text-align:center;font-family:var(--S)}
+.artist-lic{display:flex;align-items:center;justify-content:center;gap:4px;font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:var(--M)}
+
+/* ── DETAIL PANEL ── */
+.pnl{width:0;min-width:0;background:var(--paper2);border-left:1px solid var(--rule2);overflow:hidden;transition:all .2s ease;display:flex;flex-direction:column}
+.pnl.open{width:264px;min-width:264px}
+.pi{padding:16px;width:264px;min-width:264px;overflow-y:auto;flex:1;position:relative}
+
+.panel-cover{width:100%;aspect-ratio:1;border:1px solid var(--rule2);margin-bottom:14px;overflow:hidden;position:relative;background:var(--paper3);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.panel-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.panel-cover-vinyl{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.cover-upload-btn{position:absolute;bottom:0;left:0;right:0;background:rgba(26,24,20,.55);color:var(--paper);font-size:8px;letter-spacing:2px;text-transform:uppercase;font-family:var(--M);padding:5px;text-align:center;opacity:0;transition:opacity .15s}
+.panel-cover:hover .cover-upload-btn{opacity:1}
+
+.px{position:absolute;top:8px;right:8px;z-index:2;background:rgba(242,239,232,.9);border:1px solid var(--rule2);color:var(--ink3);width:20px;height:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;font-family:var(--M);transition:all .1s}
+.px:hover{border-color:var(--ink);color:var(--ink)}
+.p-label{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--ink3);margin-bottom:10px;font-family:var(--S);font-weight:500}
+.p-name{font-size:13px;font-weight:600;letter-spacing:-.3px;line-height:1.3;margin-bottom:3px;font-family:var(--M)}
+.p-art{font-size:11px;color:var(--ink2);margin-bottom:14px;font-family:var(--S)}
+.pr{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--rule)}
+.pl{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);font-family:var(--S);font-weight:500}
+.pv{font-family:var(--M);font-size:11px;font-weight:500}
+.sl2{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--ink3);font-family:var(--S);font-weight:500;margin:14px 0 7px;display:flex;align-items:center;gap:6px}
+.sl2 em{font-family:var(--M);font-size:11px;color:var(--ink);font-style:normal;letter-spacing:0;text-transform:none}
+.tg{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:2px}
+.tbtn{padding:3px 8px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border:1px solid var(--rule2);color:var(--ink3);background:transparent;font-family:var(--M);transition:all .1s}
+.tbtn:hover{border-color:var(--ink2);color:var(--ink)}
+.to-o{border-color:var(--green)!important;color:var(--green)!important;background:rgba(42,122,74,.07)!important}
+.to-b{border-color:var(--blue)!important;color:var(--blue)!important;background:rgba(26,90,138,.07)!important}
+.to-p{border-color:var(--ink)!important;color:var(--ink)!important;background:var(--paper3)!important}
+.to-c{border-color:var(--amber)!important;color:var(--amber)!important;background:rgba(138,90,26,.07)!important}
+.to-d{border-color:#7a6a10!important;color:#7a6a10!important;background:rgba(122,106,16,.07)!important}
+.to-n{border-color:#4a2a7a!important;color:#4a2a7a!important;background:rgba(74,42,122,.07)!important}
+.to-k{border-color:var(--red)!important;color:var(--red)!important;background:rgba(192,57,43,.07)!important}
+.to-m{border-color:var(--green)!important;color:var(--green)!important;background:rgba(42,122,74,.06)!important}
+.to-t{border-color:var(--amber)!important;color:var(--amber)!important;background:rgba(138,90,26,.06)!important}
+
+/* license buttons */
+.lic-btn{padding:4px 9px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border:1px solid var(--rule2);color:var(--ink3);background:transparent;font-family:var(--M);transition:all .1s;display:flex;align-items:center;gap:5px}
+.lic-btn:hover{border-color:var(--ink2);color:var(--ink)}
+.lic-btn .ld{width:5px;height:5px;border-radius:50%}
+.lb-own.active{border-color:var(--green);color:var(--green);background:rgba(42,122,74,.07)}
+.lb-licensed.active{border-color:var(--blue);color:var(--blue);background:rgba(26,90,138,.07)}
+.lb-promo.active{border-color:var(--amber);color:var(--amber);background:rgba(138,90,26,.07)}
+.lb-none.active{border-color:var(--red);color:var(--red);background:rgba(192,57,43,.07)}
+.lb-unknown.active{border-color:var(--ink3);color:var(--ink2);background:var(--paper3)}
+
+/* license note field */
+.lic-note{width:100%;background:var(--paper3);border:1px solid var(--rule2);color:var(--ink);font-family:var(--S);font-size:11px;padding:6px 8px;outline:none;resize:none;transition:border-color .15s;margin-top:6px;min-height:56px}
+.lic-note:focus{border-color:var(--ink2)}
+.lic-note::placeholder{color:var(--ink4)}
+
+/* license warning box */
+.lic-warning{
+  background:rgba(192,57,43,.07);border:1px solid rgba(192,57,43,.3);
+  padding:8px 10px;margin-top:8px;
+  font-size:10px;color:var(--red);font-family:var(--S);line-height:1.6;
+  display:flex;align-items:flex-start;gap:6px;
+}
+.lic-warning-icon{font-size:12px;flex-shrink:0;margin-top:1px}
+
+.esl{width:100%;margin:5px 0 2px;-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
+.esl::-webkit-slider-runnable-track{height:1px;background:var(--rule2)}
+.esl::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:10px;background:var(--ink);border-radius:0;margin-top:-5px}
+.esl:focus{outline:none}
+
+/* genre input in panel */
+.genre-input{width:100%;background:var(--paper3);border:1px solid var(--rule2);color:var(--ink);font-family:var(--M);font-size:11px;padding:5px 8px;outline:none;transition:border-color .15s;margin-top:4px}
+.genre-input:focus{border-color:var(--ink2)}
+.genre-input::placeholder{color:var(--ink4)}
+.genre-hint{font-size:9px;color:var(--ink3);font-family:var(--S);margin-top:3px;font-style:italic}
+
+/* ── SET PLANNER ── */
+.set-head-block{padding:14px 16px;border-bottom:1px solid var(--rule2)}
+.sh{display:flex;gap:8px;padding:14px 16px}
+.ss{flex:1;background:var(--paper);border:1px solid var(--rule2);color:var(--ink);padding:6px 10px;font-family:var(--M);font-size:10px;letter-spacing:.5px;outline:none;cursor:pointer;-webkit-appearance:none}
+.ss:focus{border-color:var(--ink)}
+.em{margin:0 16px 14px;border:1px solid var(--rule);padding:12px;background:var(--paper2)}
+.eml{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--ink3);margin-bottom:10px;font-family:var(--S);font-weight:500}
+.bars{display:flex;gap:2px;align-items:flex-end;height:56px}
+.bar{flex:1;min-height:3px;transition:height .3s}
+.ax{display:flex;justify-content:space-between;font-family:var(--M);font-size:9px;color:var(--ink3);padding-top:5px;letter-spacing:.5px}
+.sec{padding:0 16px;margin-bottom:12px}
+.sech{display:flex;align-items:baseline;gap:8px;padding:9px 0 6px;border-bottom:1px solid var(--rule2)}
+.sect{font-size:8px;letter-spacing:3px;text-transform:uppercase;font-weight:600;font-family:var(--S)}
+.secc{font-family:var(--M);font-size:10px;color:var(--ink3)}
+.stk{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--rule);cursor:pointer;transition:padding .08s}
+.stk:hover{padding-left:5px}
+.stk-cover{width:30px;height:30px;flex-shrink:0;border:1px solid var(--rule2);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.stk-cover img{width:100%;height:100%;object-fit:cover}
+.stki{flex:1;min-width:0}
+.stkn{font-size:11px;font-weight:500;font-family:var(--M);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stka{font-size:10px;color:var(--ink2);margin-top:1px;font-family:var(--S)}
+.stkb{font-family:var(--M);font-size:11px;white-space:nowrap}
+.stkk{font-family:var(--M);font-size:9px;color:var(--ink3)}
+.se{padding:10px 0;color:var(--ink3);font-size:11px;font-family:var(--S);font-style:italic}
+
+/* ── MODAL ── */
+.mb{display:none;position:fixed;inset:0;z-index:60;background:rgba(26,24,20,.6);align-items:center;justify-content:center}
+.mb.open{display:flex}
+.md{background:var(--paper);border:1px solid var(--rule2);padding:24px;width:480px;max-width:93vw;box-shadow:4px 4px 0 var(--ink)}
+.md h2{font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;font-family:var(--M)}
+.md p{color:var(--ink2);font-size:11px;margin-bottom:14px;line-height:1.7;font-family:var(--S)}
+.mdc{background:var(--paper2);border:1px solid var(--rule);padding:12px;font-family:var(--M);font-size:10px;color:var(--ink2);margin-bottom:14px;white-space:pre;overflow:auto;line-height:1.8;max-height:140px}
+.mdf{display:flex;gap:8px;justify-content:flex-end}
+
+/* ── LICENSE ALERT MODAL ── */
+.lic-modal-body{max-height:320px;overflow-y:auto;margin-bottom:16px}
+.lic-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--rule)}
+.lic-row:last-child{border:none}
+.lic-row-cover{width:28px;height:28px;flex-shrink:0;border:1px solid var(--rule2);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.lic-row-cover img{width:100%;height:100%;object-fit:cover}
+.lic-row-info{flex:1;min-width:0}
+.lic-row-title{font-size:11px;font-weight:500;font-family:var(--M);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lic-row-artist{font-size:10px;color:var(--ink2);font-family:var(--S)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:18px;right:18px;z-index:200;background:var(--ink);color:var(--paper);padding:8px 14px;font-family:var(--M);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;gap:8px;transform:translateY(50px);opacity:0;transition:all .2s ease;max-width:300px;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+.tled{width:5px;height:5px;border-radius:50%;background:var(--red);flex-shrink:0}
+.tled.grn{background:var(--green)}
+
+.emp{text-align:center;padding:48px 20px;color:var(--ink3)}
+.emp-i{font-size:10px;letter-spacing:4px;text-transform:uppercase;display:block;margin-bottom:10px;font-family:var(--M)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:300;opacity:0;pointer-events:none;transition:opacity .2s}.modal.open{opacity:1;pointer-events:auto}.modal-content{background:var(--paper);border:1px solid var(--rule2);border-radius:6px;max-width:500px;padding:20px;position:relative;box-shadow:0 20px 25px rgba(0,0,0,0.2)}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside class="sb">
+  <div class="wm">
+    <div class="wm-row"><span class="wm-name">SetFlow</span><span class="wm-dot"></span></div>
+    <div class="wm-sub">DJ Music Organizer</div>
+  </div>
+  <nav class="nav">
+    <div class="nl">Library</div>
+    <div class="ni on" onclick="goView('library',this)">
+      <span class="nd" style="border-color:var(--red);color:var(--red)"></span>All Tracks
+      <span class="nc" id="ca">0</span>
+    </div>
+    <div class="ni" onclick="goView('artists',this)">
+      <span class="nd" style="border-color:var(--green);color:var(--green)"></span>My Artists
+      <span class="nc" id="cart">0</span>
+    </div>
+    <div class="ni" onclick="goView('set',this)">
+      <span class="nd"></span>Set Planner
+    </div>
+
+    <div class="nl">Role</div>
+    <div class="ni" onclick="qf('opener',this)"><span class="nd" style="border-color:var(--green);color:var(--green)"></span>Opener<span class="nc" id="co">0</span></div>
+    <div class="ni" onclick="qf('build',this)"><span class="nd" style="border-color:var(--blue);color:var(--blue)"></span>Build Up<span class="nc" id="cb">0</span></div>
+    <div class="ni" onclick="qf('peak',this)"><span class="nd" style="border-color:var(--ink);color:var(--ink)"></span>Peak<span class="nc" id="cp">0</span></div>
+    <div class="ni" onclick="qf('closing',this)"><span class="nd" style="border-color:var(--amber);color:var(--amber)"></span>Closing<span class="nc" id="cc">0</span></div>
+
+    <div class="nl">Lizenz</div>
+    <div class="ni" onclick="lf('own',this)"><span class="nd" style="border-color:var(--green);color:var(--green)"></span>Eigene Prod.<span class="nc" id="cl-own">0</span></div>
+    <div class="ni" onclick="lf('licensed',this)"><span class="nd" style="border-color:var(--blue);color:var(--blue)"></span>Lizenziert<span class="nc" id="cl-lic">0</span></div>
+    <div class="ni" onclick="lf('promo',this)"><span class="nd" style="border-color:var(--amber);color:var(--amber)"></span>Promo<span class="nc" id="cl-pro">0</span></div>
+    <div class="ni ni-warn" onclick="lf('none',this)"><span class="nd" style="border-color:var(--red);color:var(--red)"></span>Keine Lizenz<span class="nc" id="cl-non">0</span></div>
+  </nav>
+  <div class="sf">
+    <div class="st"><div class="sn" id="s1">0</div><div class="sl">Tracks</div></div>
+    <div class="st"><div class="sn" id="s2">0</div><div class="sl">Tagged</div></div>
+    <div class="st"><div class="sn" id="s3">—</div><div class="sl">Ø BPM</div></div>
+    <div class="st"><div class="sn" id="s4">0</div><div class="sl" id="s4-warn" style="color:var(--red)">⚠ Unlicensed</div></div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div class="tb-t" id="vtitle">Library<span class="tb-s" id="vsub">— All Tracks</span></div>
+    <button class="btn b-out" onclick="document.getElementById('fi').click()">+ Import</button>
+    <button class="btn b-out" onclick="loadDemo()">Demo</button>
+    <button class="btn b-out" onclick="runAI()" id="aib">Analyze</button>
+    <button class="btn b-out" onclick="checkLicenses()">⚠ Lizenzen</button>
+    <button class="btn b-out" onclick="checkLicenses()">⚠ License</button>
+    <button class="btn b-red" onclick="openExp()">Export RB</button>
+  </div>
+
+  <!-- LIBRARY VIEW -->
+  <div id="vl" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+    <div class="ct">
+      <div class="dz" id="dz" onclick="document.getElementById('fi').click()" ondragover="dzo(event)" ondragleave="dzl()" ondrop="dzd(event)">
+        <input type="file" id="fi" multiple accept=".mp3,.wav,.aiff,.flac,.m4a" onchange="fi2(event)">
+        <div class="dz-vinyl">
+          <svg viewBox="0 0 46 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="23" cy="23" r="22" stroke="#1a1814" stroke-width="1"/>
+            <circle cx="23" cy="23" r="16" stroke="#1a1814" stroke-width=".5"/>
+            <circle cx="23" cy="23" r="10" stroke="#1a1814" stroke-width=".5"/>
+            <circle cx="23" cy="23" r="5" stroke="#1a1814" stroke-width=".5"/>
+            <circle cx="23" cy="23" r="2" fill="#1a1814"/>
+          </svg>
+        </div>
+        <h3>Drop your records here</h3>
+        <p>MP3 · WAV · AIFF · FLAC<br>oder klick "Demo" zum Starten</p>
+        <div class="dz-tag">← Demo Data</div>
+      </div>
+
+      <div class="fb" id="fb">
+        <button class="fp on" onclick="sf('all',this)">All</button>
+        <button class="fp" onclick="sf('opener',this)">Opener</button>
+        <button class="fp" onclick="sf('build',this)">Build</button>
+        <button class="fp" onclick="sf('peak',this)">Peak</button>
+        <button class="fp" onclick="sf('closing',this)">Closing</button>
+        <button class="fp" onclick="sf('untagged',this)">Untagged</button>
+        <button class="fp" onclick="sf('lic-warn',this)" style="margin-left:8px">⚠ Lizenz</button>
+        <input class="srch" type="text" placeholder="search..." oninput="doQ(this.value)">
+      </div>
+
+      <div class="ab" id="ab">
+        <span class="ab-txt">Analyzing</span>
+        <span class="ab-s" id="apt"></span>
+        <div class="pt"><div class="pf" id="ap" style="width:0%"></div></div>
+      </div>
+
+      <table class="tbl" id="tbl" style="display:none">
+        <thead><tr>
+          <th style="width:28px">#</th>
+          <th style="width:44px"></th>
+          <th>Title / Artist</th>
+          <th>Genre</th>
+          <th>BPM</th>
+          <th>Energy</th>
+          <th>Role</th>
+          <th>Lizenz</th>
+        </tr></thead>
+        <tbody id="tbd"></tbody>
+      </table>
+      <div class="emp" id="em" style="display:none"><span class="emp-i">— no records —</span></div>
+    </div>
+  </div>
+
+  <!-- ARTISTS VIEW -->
+  <div id="va" style="display:none;flex:1;overflow-y:auto">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--rule2);display:flex;align-items:center;gap:10px">
+      <div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px">My Artists</div>
+        <div style="font-size:11px;color:var(--ink3);font-family:var(--S)">Eigene Produktionen — lizenzrechtlich abgesichert</div>
+      </div>
+      <button class="btn b-grn" style="margin-left:auto" onclick="addArtist()">+ Artist</button>
+    </div>
+    <div class="artist-grid" id="artist-grid"></div>
+  </div>
+
+  <!-- SET PLANNER -->
+  <div id="vs" style="display:none;flex:1;overflow-y:auto">
+    <div class="set-head-block">
+      <div style="font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px">Set Planner</div>
+      <div style="font-size:11px;color:var(--ink3);font-family:var(--S)">Build your set from Opener to Closing.</div>
+    </div>
+    <div class="sh">
+      <select class="ss" id="sdur" onchange="buildSet()">
+        <option>60 min</option><option selected>90 min</option><option>120 min</option><option>180 min</option>
+      </select>
+      <select class="ss" id="stype" onchange="buildSet()">
+        <option>Opening Set — Night</option><option selected>Main Set — Night</option>
+        <option>Closing Set — Night</option><option>Day Set</option><option>Sunset Set</option>
+      </select>
+      <button class="btn b-ink" onclick="autoFill()">Auto-Fill</button>
+    </div>
+    <div class="em">
+      <div class="eml">Energy Curve</div>
+      <div class="bars" id="sbars"></div>
+      <div class="ax"><span>0</span><span id="amid"></span><span id="aend"></span></div>
+    </div>
+    <div id="ssec"></div>
+  </div>
+</main>
+
+<!-- DETAIL PANEL -->
+<aside class="pnl" id="pnl">
+  <div class="pi" id="pi"></div>
+</aside>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="mb" id="emod">
+  <div class="md">
+    <h2>Rekordbox Export</h2>
+    <p>Import in Rekordbox:<br><span style="font-family:var(--M);font-size:10px;color:var(--ink)">Preferences → Advanced → Database → Import</span></p>
+    <div class="mdc" id="eprev"></div>
+    <div class="mdf">
+      <button class="btn b-out" onclick="closeExp()">Cancel</button>
+      <button class="btn b-red" onclick="dlExp()">Download XML</button>
+    </div>
+  </div>
+</div>
+
+<!-- LICENSE CHECK MODAL -->
+<div class="mb" id="licmod">
+  <div class="md">
+    <h2>⚠ Lizenz-Prüfung</h2>
+    <p>Diese Tracks haben keine gültige Lizenz für den Club-Einsatz in Deutschland. Bitte vor dem Auftritt klären.</p>
+    <div class="lic-modal-body" id="lic-modal-body"></div>
+    <div class="mdf">
+      <button class="btn b-out" onclick="document.getElementById('licmod').classList.remove('open')">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><div class="tled" id="tled"></div><span id="tmsg"></span></div>
+
+<script>
+/* ── STATE ── */
+let tracks=[], artists=[], sel=null, fil='all', q='';
+
+/* ── VINYL SVG ── */
+const LC={
+  'Deep House':    {bg:'#1a1814',label:'#c0392b',text:'#f2efe8'},
+  'House':         {bg:'#1a1814',label:'#2a5a8a',text:'#f2efe8'},
+  'Techno':        {bg:'#111',label:'#222',text:'#888'},
+  'Melodic Techno':{bg:'#1a1814',label:'#3a2a5a',text:'#c0b8d8'},
+  'Disco House':   {bg:'#1a1814',label:'#8a4a1a',text:'#f8d8a8'},
+  'default':       {bg:'#1a1814',label:'#4a4640',text:'#c0bbb4'},
+};
+function vSVG(t,sz=38){
+  const c=LC[t.genre]||LC.default,r=sz/2;
+  const ini=((t.title||'?')[0]+(t.artist||'?')[0]).toUpperCase();
+  return`<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="${r}" cy="${r}" r="${r-.5}" fill="${c.bg}"/>
+    ${[.85,.78,.71,.64,.57,.50].map(f=>`<circle cx="${r}" cy="${r}" r="${(r-.5)*f}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>`).join('')}
+    <circle cx="${r}" cy="${r}" r="${r*.42}" fill="${c.label}"/>
+    <text x="${r}" y="${r+.5}" text-anchor="middle" dominant-baseline="middle" fill="${c.text}" font-family="IBM Plex Mono,monospace" font-size="${sz*.18}" font-weight="600">${ini}</text>
+    <circle cx="${r}" cy="${r}" r="${r*.07}" fill="${c.bg}"/>
+    <circle cx="${r}" cy="${r}" r="${r-.5}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+  </svg>`;
+}
+function vSVGLg(t,sz=220){
+  const c=LC[t.genre]||LC.default,r=sz/2;
+  return`<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="${c.bg}"/>
+    ${[.92,.86,.80,.74,.68,.62,.56,.50].map(f=>`<circle cx="${r}" cy="${r}" r="${(r-1)*f}" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.8"/>`).join('')}
+    <circle cx="${r}" cy="${r}" r="${r*.38}" fill="${c.label}"/>
+    <circle cx="${r}" cy="${r}" r="${r*.38}" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width=".8"/>
+    <text x="${r}" y="${r-10}" text-anchor="middle" dominant-baseline="middle" fill="${c.text}" font-family="IBM Plex Mono,monospace" font-size="${sz*.065}" font-weight="600">${(t.title||'').slice(0,14)}</text>
+    <text x="${r}" y="${r+7}" text-anchor="middle" dominant-baseline="middle" fill="${c.text}" font-family="IBM Plex Sans,sans-serif" font-size="${sz*.048}" opacity=".7">${(t.artist||'').slice(0,16)}</text>
+    <text x="${r}" y="${r+21}" text-anchor="middle" dominant-baseline="middle" fill="${c.text}" font-family="IBM Plex Mono,monospace" font-size="${sz*.042}" opacity=".5">${t.bpm||'—'} BPM</text>
+    <circle cx="${r}" cy="${r}" r="${r*.055}" fill="${c.bg}"/>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+  </svg>`;
+}
+
+/* ── LICENSE CONFIG ── */
+const LIC_CONFIG={
+  own:     {label:'Eigene Prod.',cls:'lic-own',dot:'ld-own',warn:false},
+  licensed:{label:'Lizenziert',cls:'lic-licensed',dot:'ld-licensed',warn:false},
+  promo:   {label:'Promo',cls:'lic-promo',dot:'ld-promo',warn:false},
+  none:    {label:'Keine Lizenz',cls:'lic-none',dot:'ld-none',warn:true},
+  unknown: {label:'Unbekannt',cls:'lic-unknown',dot:'ld-unknown',warn:true},
+};
+
+function licBadge(lic){
+  const c=LIC_CONFIG[lic]||LIC_CONFIG.unknown;
+  return`<span class="lic-badge ${c.cls}"><span class="lic-dot ${c.dot}" style="display:inline-block;width:5px;height:5px;border-radius:50%;flex-shrink:0"></span>${c.label}</span>`;
+}
+
+/* ── DEMO DATA ── */
+const DEMO=[
+  {id:1,title:'Ritual Movement',artist:'Innervisions',bpm:122,genres:['Deep House'],energy:35,role:'opener',vibe:['melodic','night'],key:'8A',dur:'7:24',a:true,cover:null,lic:'licensed',licNote:'Beatport kauft 2023',isOwn:false,ownArtist:null},
+  {id:2,title:'Dusk to Dawn',artist:'Âme',bpm:124,genres:['Deep House'],energy:42,role:'opener',vibe:['melodic','night'],key:'5A',dur:'8:12',a:true,cover:null,lic:'licensed',licNote:'Beatport kauft 2022',isOwn:false,ownArtist:null},
+  {id:3,title:'Lost in Sound',artist:'Dixon',bpm:126,genres:['House','Deep House'],energy:55,role:'build',vibe:['melodic'],key:'2A',dur:'9:03',a:true,cover:null,lic:'promo',licNote:'Promo von Innervisions',isOwn:false,ownArtist:null},
+  {id:4,title:'Archipelago',artist:'Tale Of Us',bpm:125,genres:['Melodic Techno','Deep House'],energy:60,role:'build',vibe:['melodic','dark'],key:'11A',dur:'7:55',a:true,cover:null,lic:'licensed',licNote:'Fabric kauft 2023',isOwn:false,ownArtist:null},
+  {id:5,title:'Forgotten Roots',artist:'Solomun',bpm:128,genres:['House'],energy:68,role:'build',vibe:['night'],key:'4A',dur:'8:44',a:true,cover:null,lic:'unknown',licNote:'',isOwn:false,ownArtist:null},
+  {id:6,title:'Burning Bridges',artist:'Recondite',bpm:130,genres:['Techno','Dub Techno'],energy:75,role:'peak',vibe:['dark','night'],key:'9A',dur:'6:30',a:true,cover:null,lic:'none',licNote:'Rip aus SoundCloud',isOwn:false,ownArtist:null},
+  {id:7,title:'Phosphene',artist:'Maceo Plex',bpm:132,genres:['Techno'],energy:82,role:'peak',vibe:['dark'],key:'3A',dur:'7:18',a:true,cover:null,lic:'licensed',licNote:'Beatport kauft 2021',isOwn:false,ownArtist:null},
+  {id:8,title:'System Override',artist:'Ben Klock',bpm:134,genres:['Techno'],energy:90,role:'peak',vibe:['dark','night'],key:'6A',dur:'8:01',a:true,cover:null,lic:'licensed',licNote:'Ostgut kauft 2023',isOwn:false,ownArtist:null},
+  {id:9,title:'Morning Light',artist:'DJ_DEMO',bpm:124,genres:['Afro House','Deep House'],energy:58,role:'build',vibe:['day','melodic'],key:'7A',dur:'6:20',a:true,cover:null,lic:'own',licNote:'Eigene Produktion — unveröffentlicht',isOwn:true,ownArtist:'DJ_DEMO'},
+  {id:10,title:'Sunset Ritual',artist:'Peggy Gou',bpm:126,genres:['House','Disco House'],energy:65,role:'build',vibe:['day','melodic'],key:'1A',dur:'6:40',a:true,cover:null,lic:'licensed',licNote:'Beatport kauft 2023',isOwn:false,ownArtist:null},
+  {id:11,title:'Golden Hour',artist:'Hunee',bpm:122,genres:['Disco House'],energy:55,role:'build',vibe:['day'],key:'10A',dur:'7:15',a:true,cover:null,lic:'promo',licNote:'Promo 2024',isOwn:false,ownArtist:null},
+  {id:12,title:'Deep Connexion',artist:'DJ_DEMO',bpm:126,genres:['Deep House','Minimal'],energy:48,role:'opener',vibe:['night','melodic'],key:'9A',dur:'7:55',a:true,cover:null,lic:'own',licNote:'Release: Bandcamp 2024',isOwn:true,ownArtist:'DJ_DEMO'},
+  {id:13,title:'Fadeout Sequence',artist:'Monika Kruse',bpm:126,genres:['Techno'],energy:58,role:'closing',vibe:['dark','night'],key:'5A',dur:'8:00',a:true,cover:null,lic:'unknown',licNote:'',isOwn:false,ownArtist:null},
+  {id:14,title:'Morning Dew',artist:'Larry Heard',bpm:120,genres:['Deep House','Chicago House'],energy:38,role:'closing',vibe:['melodic','day'],key:'8A',dur:'7:45',a:true,cover:null,lic:'licensed',licNote:'Traxsource kauft 2022',isOwn:false,ownArtist:null},
+  {id:15,title:'Goodbye Ritual',artist:'Âme',bpm:118,genres:['Deep House'],energy:30,role:'closing',vibe:['melodic','night'],key:'2A',dur:'9:10',a:true,cover:null,lic:'none',licNote:'',isOwn:false,ownArtist:null},
+];
+
+const DEMO_ARTISTS=[
+  {id:'a1',name:'DJ_DEMO',alias:'Your Artist Name',tracks:2,cover:null,bio:'Deine eigene Produktion — alle Rechte bei dir.',verified:true},
+];
+
+function loadDemo(){
+  tracks=DEMO.map(t=>({...t,genres:[...(t.genres||[])]}));
+  artists=DEMO_ARTISTS.map(a=>({...a}));
+  sts();ren();show();renderArtists();
+  toast('15 Demo Tracks geladen','grn');
+}
+
+/* ── FILE IMPORT ── */
+function fi2(e){proc(Array.from(e.target.files))}
+function dzo(e){e.preventDefault();document.getElementById('dz').classList.add('drag')}
+function dzl(){document.getElementById('dz').classList.remove('drag')}
+function dzd(e){
+  e.preventDefault();dzl();
+  const fs=Array.from(e.dataTransfer.files).filter(f=>/\.(mp3|wav|aiff|flac|m4a)$/i.test(f.name));
+  if(fs.length)proc(fs);
+}
+function proc(fs){
+  const n=Date.now();
+  tracks=[...tracks,...fs.map((f,i)=>{
+    const nm=f.name.replace(/\.[^.]+$/,''),p=nm.split(' - ');
+    return{id:n+i,title:p[1]||nm,artist:p[0]||'Unknown',bpm:null,genres:[],energy:null,role:null,vibe:[],key:null,dur:null,a:false,cover:null,lic:'unknown',licNote:'',isOwn:false,ownArtist:null};
+  })];
+  sts();ren();show();toast(`${fs.length} Tracks importiert`);
+}
+
+/* ── COVER ── */
+function uploadCover(id){
+  const inp=document.createElement('input');inp.type='file';inp.accept='image/*';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{const t=tracks.find(t=>t.id===id);if(t){t.cover=ev.target.result;ren();rp();toast('Cover hinzugefügt','grn')}};
+    r.readAsDataURL(f);
+  };inp.click();
+}
+
+/* ── AI ANALYSIS ── */
+async function runAI(){
+  const todo=tracks.filter(t=>!t.a);
+  if(!todo.length){toast('Alle Tracks analysiert');return}
+  document.getElementById('ab').classList.add('vis');
+  document.getElementById('aib').disabled=true;
+  const GENRE_COMBOS=[
+    ['Deep House'],['House'],['Techno'],['Melodic Techno'],
+    ['House','Deep House'],['Techno','Dub Techno'],
+    ['Afro House','Deep House'],['Disco House','House'],
+    ['Deep House','Minimal'],['Techno','Industrial'],
+  ];
+  for(let i=0;i<todo.length;i++){
+    const t=todo[i];
+    document.getElementById('ap').style.width=Math.round((i+1)/todo.length*100)+'%';
+    document.getElementById('apt').textContent=`${i+1}/${todo.length}`;
+    await new Promise(r=>setTimeout(r,150));
+    t.bpm=118+Math.floor(Math.random()*18);
+    t.energy=30+Math.floor(Math.random()*65);
+    t.key=['1A','2A','3A','4A','5A','6A','7A','8A','9A','10A','11A','12A'][Math.floor(Math.random()*12)];
+    t.genres=GENRE_COMBOS[Math.floor(Math.random()*GENRE_COMBOS.length)];
+    t.role=t.energy<40?'opener':t.energy<60?'build':t.energy<80?'peak':'closing';
+    t.vibe=t.energy<50?['melodic']:t.energy>75?['dark']:['night'];
+    t.a=true;ren();
+  }
+  document.getElementById('ab').classList.remove('vis');
+  document.getElementById('aib').disabled=false;
+  sts();toast('Analyse abgeschlossen','grn');
+}
+
+/* ── RENDER ── */
+function show(){
+  document.getElementById('dz').style.display='none';
+  document.getElementById('fb').classList.add('vis');
+  document.getElementById('tbl').style.display='table';
+}
+
+function bc(b){if(!b)return'';if(b<122)return'z1';if(b<126)return'z2';if(b<130)return'z3';if(b<134)return'z4';return'z5'}
+function ec(e){if(!e)return'var(--rule2)';if(e<40)return'var(--green)';if(e<60)return'var(--blue)';if(e<80)return'var(--ink2)';return'var(--ink)'}
+const RC={opener:'co',build:'cb',peak:'cp',closing:'cc'};
+const VC={day:'cd',night:'cn',dark:'ck',melodic:'cm',tribal:'ct2'};
+function cr(r){return r?`<span class="ch ${RC[r]||''}">${r}</span>`:'<span style="color:var(--ink4);font-size:10px">—</span>'}
+
+function genreChips(genres){
+  if(!genres||!genres.length)return'<span style="color:var(--ink4);font-size:10px">—</span>';
+  return genres.map((g,i)=>`<span class="ch ${i===0?'ch-genre':'ch-subgenre'}">${g}</span>`).join('');
+}
+
+function coverCell(t){
+  if(t.cover)return`<div class="cover-wrap"><img src="${t.cover}" alt=""></div>`;
+  return`<div class="cover-vinyl">${vSVG(t,38)}</div>`;
+}
+
+function filtered(){
+  let list=tracks;
+  if(fil==='untagged')list=list.filter(t=>!t.role);
+  else if(fil==='lic-warn')list=list.filter(t=>t.lic==='none'||t.lic==='unknown');
+  else if(fil==='own')list=list.filter(t=>t.isOwn);
+  else if(fil!=='all')list=list.filter(t=>t.role===fil);
+  if(q){const lq=q.toLowerCase();list=list.filter(t=>t.title.toLowerCase().includes(lq)||t.artist.toLowerCase().includes(lq)||(t.genres||[]).join(' ').toLowerCase().includes(lq))}
+  return list;
+}
+
+function ren(){
+  const list=filtered();
+  document.getElementById('em').style.display=list.length?'none':'block';
+  document.getElementById('tbd').innerHTML=list.map((t,i)=>`
+    <tr onclick="selT(${t.id})" class="${sel?.id===t.id?'sel':''}">
+      <td class="td-num tno">${String(i+1).padStart(2,'0')}</td>
+      <td class="td-cover">${coverCell(t)}</td>
+      <td>
+        <div class="tn">${t.title}${t.isOwn?` <span style="font-size:9px;color:var(--green);font-family:var(--M);letter-spacing:1px">★ EIGEN</span>`:''}</div>
+        <div class="ta">${t.artist}</div>
+      </td>
+      <td>${genreChips(t.genres)}</td>
+      <td class="tbpm ${bc(t.bpm)}">${t.bpm||'—'}</td>
+      <td><div class="eb"><div class="et"><div class="ef" style="width:${t.energy||0}%;background:${ec(t.energy)}"></div></div><span class="ev">${t.energy||'—'}</span></div></td>
+      <td>${cr(t.role)}</td>
+      <td>${licBadge(t.lic)}</td>
+    </tr>`).join('');
+}
+
+function sts(){
+  const n=tracks.length,tagged=tracks.filter(t=>t.role).length;
+  const unlicensed=tracks.filter(t=>t.lic==='none'||t.lic==='unknown').length;
+  document.getElementById('ca').textContent=n;
+  document.getElementById('cart').textContent=artists.length;
+  document.getElementById('s1').textContent=n;
+  document.getElementById('s2').textContent=tagged;
+  ['opener','build','peak','closing'].forEach(r=>{
+    const el=document.getElementById('c'+r[0]);if(el)el.textContent=tracks.filter(t=>t.role===r).length;
+  });
+  document.getElementById('cl-own').textContent=tracks.filter(t=>t.lic==='own').length;
+  document.getElementById('cl-lic').textContent=tracks.filter(t=>t.lic==='licensed').length;
+  document.getElementById('cl-pro').textContent=tracks.filter(t=>t.lic==='promo').length;
+  document.getElementById('cl-non').textContent=tracks.filter(t=>t.lic==='none').length;
+  const bs=tracks.filter(t=>t.bpm).map(t=>t.bpm);
+  document.getElementById('s3').textContent=bs.length?Math.round(bs.reduce((a,b)=>a+b)/bs.length):'—';
+  document.getElementById('s4').textContent=unlicensed;
+  document.getElementById('s4-warn').style.color=unlicensed>0?'var(--red)':'var(--ink3)';
+  document.getElementById('s4-warn').textContent=unlicensed>0?'⚠ Unl.':'Genres';
+}
+
+/* ── FILTERS ── */
+function sf(f,el){fil=f;document.querySelectorAll('.fp').forEach(p=>p.className='fp');el.className='fp on';ren()}
+function qf(f){fil=f;ren()}
+function lf(f){fil=f;ren()}
+function doQ(v){q=v;ren()}
+
+/* ── LICENSE CHECK ── */
+function checkLicenses(){
+  const warn=tracks.filter(t=>t.lic==='none'||t.lic==='unknown');
+  if(!warn.length){toast('Alle Tracks lizenziert ✓','grn');return}
+  document.getElementById('lic-modal-body').innerHTML=warn.map(t=>`
+    <div class="lic-row">
+      <div class="lic-row-cover">${t.cover?`<img src="${t.cover}">`:`<div style="width:28px;height:28px">${vSVG(t,28)}</div>`}</div>
+      <div class="lic-row-info">
+        <div class="lic-row-title">${t.title}</div>
+        <div class="lic-row-artist">${t.artist}</div>
+      </div>
+      ${licBadge(t.lic)}
+    </div>`).join('');
+  document.getElementById('licmod').classList.add('open');
+}
+
+/* ── ARTISTS VIEW ── */
+function renderArtists(){
+  const grid=document.getElementById('artist-grid');
+  if(!artists.length){
+    grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--ink3);font-family:var(--S);font-size:12px">
+      <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px">Noch keine Artists<br><button class="btn b-grn" onclick="uploadOwnProduction()" style="margin-top:12px;width:100%">+ Upload Production</button></div>
+      <p>Füge deine eigenen Artist-Profile hinzu<br>um eigene Produktionen zu tracken.</p>
+    </div>`;
+    return;
+  }
+  grid.innerHTML=artists.map(a=>{
+    const ownTracks=tracks.filter(t=>t.ownArtist===a.name);
+    const ini=a.name.slice(0,2).toUpperCase();
+    return`<div class="artist-card" onclick="selArtist('${a.id}')">
+      <div class="artist-avatar">${ini}</div>
+      <div class="artist-name">${a.name}</div>
+      <div class="artist-meta">${ownTracks.length} Produktionen</div>
+      <div class="artist-lic"><span class="lic-dot ld-own" style="width:6px;height:6px;border-radius:50%;background:var(--green)"></span>Lizenz: Eigene Rechte</div>
+    </div>`;
+  }).join('');
+}
+
+function addArtist(){
+  const name=prompt('Artist Name / Alias:');
+  if(!name||!name.trim())return;
+  artists.push({id:'a'+Date.now(),name:name.trim(),tracks:0,cover:null,bio:'',verified:false});
+  renderArtists();sts();
+  toast('Artist hinzugefügt','grn');
+}
+
+function selArtist(id){
+  const a=artists.find(x=>x.id===id);if(!a)return;
+  const ownTracks=tracks.filter(t=>t.ownArtist===a.name);
+  document.getElementById('pi').innerHTML=`
+    <button class="px" onclick="closeP()">×</button>
+    <div class="p-label">Artist Profile</div>
+    <div class="p-name">${a.name}</div>
+    <div class="p-art" style="color:var(--green)">★ Eigene Produktionen</div>
+    <div class="pr"><span class="pl">Tracks</span><span class="pv">${ownTracks.length}</span></div>
+    <div class="pr"><span class="pl">Lizenz</span><span class="pv" style="color:var(--green)">Eigene Rechte</span></div>
+    <div class="sl2">Tracks</div>
+    ${ownTracks.length?ownTracks.map(t=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--rule);cursor:pointer" onclick="selT(${t.id})">
+        <div style="width:26px;height:26px;flex-shrink:0">${t.cover?`<img src="${t.cover}" style="width:26px;height:26px;object-fit:cover;border:1px solid var(--rule2)">`:`${vSVG(t,26)}`}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:500;font-family:var(--M);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.title}</div>
+          <div style="font-size:10px;color:var(--ink3);font-family:var(--S)">${(t.genres||[]).join(' / ')}</div>
+        </div>
+        <span style="font-family:var(--M);font-size:10px;color:var(--ink3)">${t.bpm||'—'}</span>
+      </div>`).join('')
+    :'<div style="color:var(--ink3);font-size:11px;font-style:italic;padding:8px 0">Keine Tracks mit diesem Artist.</div>'}
+  `;
+  document.getElementById('pnl').classList.add('open');
+}
+
+/* ── TRACK PANEL ── */
+function selT(id){
+  sel=tracks.find(t=>t.id===id);
+  document.getElementById('pnl').classList.add('open');
+  rp();ren();
+}
+function closeP(){document.getElementById('pnl').classList.remove('open');sel=null;ren()}
+
+function rp(){
+  const t=sel;if(!t)return;
+  const licWarn=(t.lic==='none'||t.lic==='unknown');
+  const coverHtml=t.cover
+    ?`<img src="${t.cover}" alt="" style="width:100%;height:100%;object-fit:cover;display:block">`
+    :`<div class="panel-cover-vinyl">${vSVGLg(t,220)}</div>`;
+
+  document.getElementById('pi').innerHTML=`
+    <div class="panel-cover" onclick="uploadCover(${t.id})" title="Click to add cover">
+      ${coverHtml}
+      <div class="cover-upload-btn">+ Cover Art</div>
+    </div>
+    <button class="px" onclick="closeP()" style="top:8px;right:8px">×</button>
+    <div class="p-label">Track Details</div>
+    <div class="p-name">${t.title}${t.isOwn?' <span style="color:var(--green);font-size:10px">★</span>':''}</div>
+    <div class="p-art">${t.artist}</div>
+    <div class="pr"><span class="pl">BPM</span><span class="pv ${bc(t.bpm)}">${t.bpm||'—'}</span></div>
+    <div class="pr"><span class="pl">Key</span><span class="pv">${t.key||'—'}</span></div>
+    <div class="pr"><span class="pl">Duration</span><span class="pv">${t.dur||'—'}</span></div>
+
+    <div class="sl2">Genre / Sub-Genre</div>
+    <input class="genre-input" type="text" value="${(t.genres||[]).join(', ')}"
+      placeholder="z.B. Deep House, Melodic Techno"
+      onchange="updGenres(${t.id},this.value)">
+    <div class="genre-hint">Mehrere Genres mit Komma trennen — wird automatisch erkannt</div>
+
+    <div class="sl2">Energy <em id="ev2">${t.energy||50}</em></div>
+    <input class="esl" type="range" min="0" max="100" value="${t.energy||50}" oninput="uE(${t.id},this.value)">
+
+    <div class="sl2">Set Role</div>
+    <div class="tg">
+      ${['opener','build','peak','closing'].map(r=>`<button class="tbtn ${t.role===r?'to-'+r[0]:''}" onclick="openGigPlanner(${t.id},'${r}')">${r}</button>`).join('')}
+    </div>
+    <div class="sl2">Vibe</div>
+    <div class="tg">
+      ${['day','night','dark','melodic','tribal'].map(v=>`<button class="tbtn ${(t.vibe||[]).includes(v)?'to-'+v[0]:''}" onclick="tV(${t.id},'${v}')">${v}</button>`).join('')}
+    </div>
+
+    <div class="sl2">Lizenz</div>
+    <div class="tg">
+      <button class="lic-btn lb-own ${t.lic==='own'?'active':''}" onclick="setLic(${t.id},'own')">
+        <span class="ld ld-own" style="width:5px;height:5px;border-radius:50%"></span>Eigene Prod.
+      </button>
+      <button class="lic-btn lb-licensed ${t.lic==='licensed'?'active':''}" onclick="setLic(${t.id},'licensed')">
+        <span class="ld ld-licensed" style="width:5px;height:5px;border-radius:50%"></span>Lizenziert
+      </button>
+      <button class="lic-btn lb-promo ${t.lic==='promo'?'active':''}" onclick="setLic(${t.id},'promo')">
+        <span class="ld ld-promo" style="width:5px;height:5px;border-radius:50%"></span>Promo
+      </button>
+      <button class="lic-btn lb-none ${t.lic==='none'?'active':''}" onclick="setLic(${t.id},'none')">
+        <span class="ld ld-none" style="width:5px;height:5px;border-radius:50%"></span>Keine
+      </button>
+      <button class="lic-btn lb-unknown ${t.lic==='unknown'?'active':''}" onclick="setLic(${t.id},'unknown')">
+        <span class="ld ld-unknown" style="width:5px;height:5px;border-radius:50%"></span>Unbekannt
+      </button>
+    </div>
+    <textarea class="lic-note" placeholder="Notiz: z.B. Beatport Kauf 2023, Promo von Label..." oninput="updLicNote(${t.id},this.value)">${t.licNote||''}</textarea>
+
+    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;font-size:11px;font-family:var(--S);color:var(--ink2)">
+      <input type="checkbox" ${t.isOwn?'checked':''} onchange="setOwn(${t.id},this.checked)" style="accent-color:var(--green)">
+      Eigene Produktion (Artist Track)
+    </label>
+    ${t.isOwn?`<input type="text" class="genre-input" style="margin-top:6px" value="${t.ownArtist||''}" placeholder="Artist Name..." onchange="updOwnArtist(${t.id},this.value)">`:''}
+
+    ${licWarn?`<div class="lic-warning"><span class="lic-warning-icon">⚠</span><span>Dieser Track hat keine gültige Lizenz für Club-Auftritte in Deutschland. Bitte vor dem Set klären oder ersetzen.</span></div>`:''}
+  `;
+}
+
+function updGenres(id,val){
+  const t=tracks.find(t=>t.id===id);
+  if(t){t.genres=val.split(',').map(s=>s.trim()).filter(Boolean);ren();}
+}
+function uE(id,v){const t=tracks.find(t=>t.id===id);if(t){t.energy=+v;const e=document.getElementById('ev2');if(e)e.textContent=v;ren()}}
+function sR(id,r){const t=tracks.find(t=>t.id===id);if(t){t.role=r;rp();ren();sts()}}
+function tV(id,v){
+  const t=tracks.find(t=>t.id===id);if(!t)return;
+  if(!t.vibe)t.vibe=[];
+  const i=t.vibe.indexOf(v);if(i>=0)t.vibe.splice(i,1);else t.vibe.push(v);
+  rp();ren();
+}
+function setLic(id,lic){
+  const t=tracks.find(t=>t.id===id);
+  if(t){t.lic=lic;rp();ren();sts();}
+}
+function updLicNote(id,v){const t=tracks.find(t=>t.id===id);if(t)t.licNote=v}
+function setOwn(id,v){
+  const t=tracks.find(t=>t.id===id);
+  if(t){t.isOwn=v;if(v)t.lic='own';rp();ren();sts();}
+}
+function updOwnArtist(id,v){const t=tracks.find(t=>t.id===id);if(t)t.ownArtist=v}
+
+/* ── VIEW SWITCHING ── */
+function goView(v,el){
+  ['vl','va','vs'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById(v==='library'?'vl':v==='artists'?'va':'vs').style.display=v==='library'?'flex':'block';
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  if(el)el.classList.add('on');
+  const labels={library:'— All Tracks',artists:'— My Artists',set:'— Set Planner'};
+  document.getElementById('vsub').textContent=labels[v]||'';
+  if(v==='set')buildSet();
+  if(v==='artists')renderArtists();
+}
+
+/* ── SET PLANNER ── */
+const RC2={opener:'var(--green)',build:'var(--blue)',peak:'var(--ink)',closing:'var(--amber)'};
+function buildSet(){
+  const dur=parseInt(document.getElementById('sdur').value)||90;
+  document.getElementById('amid').textContent=Math.round(dur/2)+'min';
+  document.getElementById('aend').textContent=dur+'min';
+  const prof=[15,18,23,30,38,46,55,63,70,76,82,86,88,88,85,80,72,60,44,28];
+  const ra=i=>i<5?'opener':i<10?'build':i<16?'peak':'closing';
+  document.getElementById('sbars').innerHTML=prof.map((h,i)=>`
+    <div class="bar" style="height:${h}%;background:${RC2[ra(i)]};opacity:${ra(i)==='peak'?0.9:0.65}"></div>`).join('');
+  const secs=[
+    {r:'opener',c:'var(--green)',l:'Opener'},
+    {r:'build',c:'var(--blue)',l:'Build Up'},
+    {r:'peak',c:'var(--ink)',l:'Peak'},
+    {r:'closing',c:'var(--amber)',l:'Closing'},
+  ];
+  document.getElementById('ssec').innerHTML=secs.map(s=>{
+    const list=tracks.filter(t=>t.role===s.r).slice(0,6);
+    return`<div class="sec">
+      <div class="sech"><div class="sect" style="color:${s.c}">${s.l}</div><div class="secc">${list.length} tracks</div></div>
+      ${list.length?list.map(t=>`
+        <div class="stk" onclick="selT(${t.id})">
+          <div class="stk-cover">${t.cover?`<img src="${t.cover}">`:`${vSVG(t,30)}`}</div>
+          <div class="stki">
+            <div class="stkn">${t.title}${t.isOwn?' ★':''}</div>
+            <div class="stka">${t.artist}</div>
+          </div>
+          <span class="stkb" style="color:${s.c}">${t.bpm||'—'}</span>
+          <span class="stkk">${t.key||''}</span>
+          ${(t.lic==='none'||t.lic==='unknown')?`<span style="color:var(--red);font-size:10px;font-family:var(--M)">⚠</span>`:''}
+        </div>`).join('')
+      :`<div class="se">No ${s.l} tracks tagged.</div>`}
+    </div>`;
+  }).join('');
+}
+function autoFill(){toast('Set auto-filled','grn');buildSet()}
+
+/* ── EXPORT ── */
+function openExp(){
+  const tg=tracks.filter(t=>t.role);
+  if(!tg.length){toast('Keine getaggten Tracks');return}
+  const warn=tg.filter(t=>t.lic==='none'||t.lic==='unknown');
+  if(warn.length){
+    if(!confirm(`⚠ ${warn.length} Track(s) ohne Lizenz im Set. Trotzdem exportieren?`))return;
+  }
+  document.getElementById('eprev').textContent=mkXML(tg).slice(0,560)+'...\n['+tg.length+' tracks]';
+  document.getElementById('emod').classList.add('open');
+}
+function closeExp(){document.getElementById('emod').classList.remove('open')}
+function mkXML(list){
+  const e=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return`<?xml version="1.0" encoding="UTF-8"?>
+<DJ_PLAYLISTS Version="1.0.0">
+  <PRODUCT Name="SetFlow" Version="0.1.0"/>
+  <COLLECTION Entries="${list.length}">
+    ${list.map(t=>`<TRACK TrackID="${t.id}" Name="${e(t.title)}" Artist="${e(t.artist)}" Genre="${(t.genres||[]).join('/')}" BPM="${t.bpm||0}" Tonality="${t.key||''}" Comments="${t.role?'['+t.role+']':''} ${(t.vibe||[]).map(v=>'['+v+']').join(' ')} [lic:${t.lic}]" Rating="${Math.round((t.energy||50)/20)}"/>`).join('\n    ')}
+  </COLLECTION>
+  <PLAYLISTS>
+    <NODE Type="0" Name="SetFlow" Count="4">
+      ${['opener','build','peak','closing'].map(r=>{
+        const rt=list.filter(t=>t.role===r);
+        return`<NODE Type="1" Name="${r.charAt(0).toUpperCase()+r.slice(1)}" KeyType="0" Entries="${rt.length}">\n        ${rt.map(t=>`<TRACK Key="${t.id}"/>`).join('\n        ')}\n      </NODE>`;
+      }).join('\n      ')}
+    </NODE>
+  </PLAYLISTS>
+</DJ_PLAYLISTS>`;
+}
+function dlExp(){
+  const xml=mkXML(tracks.filter(t=>t.role));
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([xml],{type:'application/xml'}));
+  a.download='setflow-rekordbox.xml';a.click();
+  closeExp();toast('XML heruntergeladen','grn');
+}
+
+/* ── TOAST ── */
+function toast(msg,type){
+  const el=document.getElementById('toast');
+  document.getElementById('tmsg').textContent=msg;
+  const led=document.getElementById('tled');
+  led.className='tled'+(type==='grn'?' grn':'');
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+sts();buildSet();
+// LICENSE CHECK
+function checkLicenses(){const warn=tracks.filter(t=>t.lic==='none'||t.lic==='unknown');if(!warn.length){toast('All licensed ✓','grn');return;}const html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px"><div style="background:var(--paper2);padding:12px;border-left:4px solid var(--green)"><div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3)">Compliant</div><div style="font-size:24px;font-weight:600;color:var(--green)">'+tracks.filter(t=>t.lic!=='none'&&t.lic!=='unknown').length+'</div></div></div>';document.getElementById('lic-modal-body').innerHTML=html;if(!document.getElementById('licmod')){const m=document.createElement('div');m.id='licmod';m.className='modal';m.innerHTML='<div class="modal-content" style="max-width:380px"><button style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:20px;cursor:pointer" onclick="closeCheckLic()">×</button><div style="font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:16px">License Status</div><div id="lic-modal-body"></div></div>';document.body.appendChild(m);}document.getElementById('licmod').classList.add('open');}
+function closeCheckLic(){const m=document.getElementById('licmod');if(m)m.classList.remove('open');}
+// GIG PLANNER
+function openGigPlanner(id,role){sel=tracks.find(x=>x.id===id);if(!sel)return;if(!document.getElementById('gig-modal')){const m=document.createElement('div');m.id='gig-modal';m.className='modal';m.innerHTML='<div class="modal-content" style="max-width:380px;position:relative"><div id="gig-modal-body"></div></div>';document.body.appendChild(m);}const html='<button style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:20px;cursor:pointer" onclick="closeGigPlanner()">×</button><div style="font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:12px">'+sel.title+' — '+role+'</div><div style="margin-bottom:10px"><input type="date" id="gig-date" style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="margin-bottom:10px"><input type="text" id="gig-venue" placeholder="Venue..." style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="margin-bottom:10px"><input type="time" id="gig-time" style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="display:flex;gap:8px"><button class="btn b-out" style="flex:1" onclick="closeGigPlanner()">Cancel</button><button class="btn b-grn" style="flex:1" onclick="saveGigPlan()">Save</button></div>';document.getElementById('gig-modal-body').innerHTML=html;document.getElementById('gig-modal').classList.add('open');}
+function closeGigPlanner(){const m=document.getElementById('gig-modal');if(m)m.classList.remove('open');}
+function saveGigPlan(){const d=document.getElementById('gig-date')?.value,v=document.getElementById('gig-venue')?.value;if(sel&&d){sel.gigDate=d;sel.gigVenue=v||'—';toast(sel.role+' @ '+(v||'?')+', '+d,'grn');closeGigPlanner();ren();}};
+// UPLOAD PRODUCTION
+function uploadOwnProduction(){const inp=document.createElement('input');inp.type='file';inp.accept='audio/*';inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const nm=f.name.replace(/\.[^.]+$/,'');const r=new FileReader();r.onload=ev=>{const nt={id:Date.now(),title:nm,artist:'YOU',bpm:null,genres:[],energy:null,role:null,vibe:[],key:null,dur:null,a:false,cover:null,lic:'own',licNote:'Own production',isOwn:true,ownArtist:'YOU'};tracks.push(nt);ren();sts();toast('Production uploaded','grn')};r.readAsDataURL(f)};inp.click();}
+</script>
+</body>
+</html>
