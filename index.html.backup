@@ -322,21 +322,6 @@ body::before{
 .emp-i{font-size:10px;letter-spacing:4px;text-transform:uppercase;display:block;margin-bottom:10px;font-family:var(--M)}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:300;opacity:0;pointer-events:none;transition:opacity .2s}.modal.open{opacity:1;pointer-events:auto}.modal-content{background:var(--paper);border:1px solid var(--rule2);border-radius:6px;max-width:500px;padding:20px;position:relative;box-shadow:0 20px 25px rgba(0,0,0,0.2)}
 
-/* ── AUTH MODAL ── */
-.auth-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(26,24,20,.85);align-items:center;justify-content:center}
-.auth-overlay.open{display:flex}
-.auth-box{background:var(--paper);border:1px solid var(--rule2);padding:28px 24px;width:340px;max-width:93vw;box-shadow:4px 4px 0 var(--ink)}
-.auth-box h2{font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;font-family:var(--M)}
-.auth-box .wm-sub{margin-bottom:18px}
-.auth-field{display:block;width:100%;background:var(--paper2);border:1px solid var(--rule2);color:var(--ink);font-family:var(--M);font-size:11px;padding:8px 10px;outline:none;margin-bottom:8px;transition:border-color .15s}
-.auth-field:focus{border-color:var(--ink)}
-.auth-field::placeholder{color:var(--ink4)}
-.auth-err{color:var(--red);font-size:10px;font-family:var(--S);margin-bottom:8px;min-height:16px}
-.auth-switch{font-size:10px;color:var(--ink3);font-family:var(--S);margin-top:12px;text-align:center}
-.auth-switch a{color:var(--ink);cursor:pointer;text-decoration:underline}
-.auth-user{display:flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid var(--rule2);font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:var(--M);color:var(--ink2);cursor:pointer;transition:all .1s}
-.auth-user:hover{border-color:var(--ink2);color:var(--ink)}
-
 /* ── HAMBURGER ── */
 .hamburger{
   display:none;
@@ -486,9 +471,6 @@ body::before{
     <button class="btn b-out" onclick="runAI()" id="aib">Analyze</button>
     <button class="btn b-out" onclick="checkLicenses()">⚠ Lizenzen</button>
     <button class="btn b-red" onclick="openExp()">Export RB</button>
-    <div class="auth-user" id="auth-btn" onclick="toggleAuthMenu()" title="Account">
-      <span id="auth-btn-label">Login</span>
-    </div>
     <div class="conn-wrap" id="conn-wrap" title="Server connection">
       <span class="conn-dot" id="conn-dot"></span>
       <span class="conn-label" id="conn-label">—</span>
@@ -628,24 +610,6 @@ body::before{
     <button class="bn" id="bn-export" onclick="openExp()"><span class="bn-icon">📦</span>Export</button>
   </div>
 </nav>
-
-<!-- AUTH MODAL -->
-<div class="auth-overlay" id="auth-overlay">
-  <div class="auth-box">
-    <h2 id="auth-title">Login</h2>
-    <div class="wm-sub">DJ Music Organizer</div>
-    <div id="auth-name-wrap" style="display:none">
-      <input class="auth-field" id="auth-name" type="text" placeholder="DJ Name" autocomplete="name">
-    </div>
-    <input class="auth-field" id="auth-email" type="email" placeholder="Email" autocomplete="email">
-    <input class="auth-field" id="auth-pass" type="password" placeholder="Password" autocomplete="current-password">
-    <div class="auth-err" id="auth-err"></div>
-    <button class="btn b-ink" id="auth-submit" onclick="authSubmit()" style="width:100%;justify-content:center;padding:8px">Login</button>
-    <div class="auth-switch" id="auth-switch">
-      Noch kein Account? <a onclick="authToggleMode()">Registrieren</a>
-    </div>
-  </div>
-</div>
 
 <!-- TOAST -->
 <div class="toast" id="toast"><div class="tled" id="tled"></div><span id="tmsg"></span></div>
@@ -1173,100 +1137,8 @@ function bnav(v,el){
   goView(v,null);
 }
 
-// ═══ AUTH ═══
-const SERVER_URL = 'https://setflow-production-6d3b.up.railway.app';
-let authToken = localStorage.getItem('setflow-token') || null;
-let authUser = JSON.parse(localStorage.getItem('setflow-user') || 'null');
-let authMode = 'login'; // 'login' | 'register'
-
-function authUpdateUI() {
-  const btn = document.getElementById('auth-btn-label');
-  if (authUser) {
-    btn.textContent = authUser.name || authUser.email.split('@')[0];
-  } else {
-    btn.textContent = 'Login';
-  }
-}
-
-function toggleAuthMenu() {
-  if (authUser) {
-    if (confirm('Logout von ' + authUser.email + '?')) authLogout();
-  } else {
-    document.getElementById('auth-overlay').classList.add('open');
-    document.getElementById('auth-email').focus();
-  }
-}
-
-function authToggleMode() {
-  authMode = authMode === 'login' ? 'register' : 'login';
-  document.getElementById('auth-title').textContent = authMode === 'login' ? 'Login' : 'Registrieren';
-  document.getElementById('auth-submit').textContent = authMode === 'login' ? 'Login' : 'Account erstellen';
-  document.getElementById('auth-name-wrap').style.display = authMode === 'register' ? 'block' : 'none';
-  document.getElementById('auth-switch').innerHTML = authMode === 'login'
-    ? 'Noch kein Account? <a onclick="authToggleMode()">Registrieren</a>'
-    : 'Schon registriert? <a onclick="authToggleMode()">Login</a>';
-  document.getElementById('auth-err').textContent = '';
-}
-
-async function authSubmit() {
-  const email = document.getElementById('auth-email').value.trim();
-  const pass = document.getElementById('auth-pass').value;
-  const name = document.getElementById('auth-name').value.trim();
-  const errEl = document.getElementById('auth-err');
-  errEl.textContent = '';
-
-  if (!email || !pass) { errEl.textContent = 'Email und Passwort eingeben'; return; }
-  if (authMode === 'register' && pass.length < 6) { errEl.textContent = 'Passwort min. 6 Zeichen'; return; }
-
-  const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
-  const body = authMode === 'register' ? { email, password: pass, name: name || undefined } : { email, password: pass };
-
-  try {
-    const res = await fetch(SERVER_URL + endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json();
-    if (!res.ok) { errEl.textContent = data.error || 'Fehler'; return; }
-
-    authToken = data.token;
-    authUser = data.user;
-    localStorage.setItem('setflow-token', authToken);
-    localStorage.setItem('setflow-user', JSON.stringify(authUser));
-
-    document.getElementById('auth-overlay').classList.remove('open');
-    authUpdateUI();
-    connectSocket();
-    toast(authMode === 'login' ? 'Eingeloggt' : 'Registriert', 'grn');
-  } catch (e) {
-    errEl.textContent = 'Server nicht erreichbar';
-    console.error('Auth error:', e);
-  }
-}
-
-function authLogout() {
-  authToken = null;
-  authUser = null;
-  localStorage.removeItem('setflow-token');
-  localStorage.removeItem('setflow-user');
-  authUpdateUI();
-  if (socket) socket.disconnect();
-  setConnStatus('offline');
-  toast('Ausgeloggt', '');
-}
-
-// Close auth modal on Escape
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') document.getElementById('auth-overlay').classList.remove('open');
-});
-// Submit on Enter
-document.getElementById('auth-pass').addEventListener('keydown', e => {
-  if (e.key === 'Enter') authSubmit();
-});
-
 // ═══ SOCKET.IO ═══
-let socket = null;
+const SERVER_URL = 'https://setflow-production-6d3b.up.railway.app';
 
 function setConnStatus(state) {
   const dot   = document.getElementById('conn-dot');
@@ -1276,32 +1148,20 @@ function setConnStatus(state) {
   label.textContent = state === 'online' ? 'Live' : state === 'connecting' ? '…' : 'Off';
 }
 
-function connectSocket() {
-  if (!authToken) return;
-  if (socket) socket.disconnect();
+const socket = io(SERVER_URL, {
+  autoConnect: true,
+  reconnection: true,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 10000,
+  reconnectionAttempts: Infinity,
+});
 
-  socket = io(SERVER_URL, {
-    auth: { token: authToken },
-    reconnection: true,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 10000,
-    reconnectionAttempts: Infinity,
-  });
-
-  socket.on('connect', () => { setConnStatus('online'); });
-  socket.on('disconnect', () => { setConnStatus('offline'); });
-  socket.on('reconnecting', () => { setConnStatus('connecting'); });
-  socket.on('connect_error', (err) => {
-    if (err.message === 'Authentication required' || err.message === 'Invalid or expired token') {
-      console.warn('Socket auth failed — logging out');
-      authLogout();
-    }
-  });
-}
+socket.on('connect',    () => { setConnStatus('online');  });
+socket.on('disconnect', () => { setConnStatus('offline'); });
+socket.on('reconnecting', () => { setConnStatus('connecting'); });
 
 // ═══ INIT ═══
-load();sts();buildSet();authUpdateUI();
-if(authToken) connectSocket();
+load();sts();buildSet();
 function checkLicenses(){const warn=tracks.filter(t=>t.lic==='none'||t.lic==='unknown');if(!warn.length){toast('All licensed ✓','grn');return;}const html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px"><div style="background:var(--paper2);padding:12px;border-left:4px solid var(--green)"><div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3)">Compliant</div><div style="font-size:24px;font-weight:600;color:var(--green)">'+tracks.filter(t=>t.lic!=='none'&&t.lic!=='unknown').length+'</div></div></div>';document.getElementById('lic-modal-body').innerHTML=html;if(!document.getElementById('licmod')){const m=document.createElement('div');m.id='licmod';m.className='modal';m.innerHTML='<div class="modal-content" style="max-width:380px"><button style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:20px;cursor:pointer" onclick="closeCheckLic()">×</button><div style="font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:16px">License Status</div><div id="lic-modal-body"></div></div>';document.body.appendChild(m);}document.getElementById('licmod').classList.add('open');}
 function openGigPlanner(id,role){sel=tracks.find(x=>x.id===id);if(!sel)return;if(!document.getElementById('gig-modal')){const m=document.createElement('div');m.id='gig-modal';m.className='modal';m.innerHTML='<div class="modal-content" style="max-width:380px;position:relative"><div id="gig-modal-body"></div></div>';document.body.appendChild(m);}const html='<button style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:20px;cursor:pointer" onclick="closeGigPlanner()">×</button><div style="font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:12px">'+sel.title+' — '+role+'</div><div style="margin-bottom:10px"><input type="date" id="gig-date" style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="margin-bottom:10px"><input type="text" id="gig-venue" placeholder="Venue..." style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="margin-bottom:10px"><input type="time" id="gig-time" style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="display:flex;gap:8px"><button class="btn b-out" style="flex:1" onclick="closeGigPlanner()">Cancel</button><button class="btn b-grn" style="flex:1" onclick="saveGigPlan()">Save</button></div>';document.getElementById('gig-modal-body').innerHTML=html;document.getElementById('gig-modal').classList.add('open');}
 function closeGigPlanner(){const m=document.getElementById('gig-modal');if(m)m.classList.remove('open');}
