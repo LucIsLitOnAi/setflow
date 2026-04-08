@@ -314,6 +314,101 @@ body::before{
 .emp{text-align:center;padding:48px 20px;color:var(--ink3)}
 .emp-i{font-size:10px;letter-spacing:4px;text-transform:uppercase;display:block;margin-bottom:10px;font-family:var(--M)}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:300;opacity:0;pointer-events:none;transition:opacity .2s}.modal.open{opacity:1;pointer-events:auto}.modal-content{background:var(--paper);border:1px solid var(--rule2);border-radius:6px;max-width:500px;padding:20px;position:relative;box-shadow:0 20px 25px rgba(0,0,0,0.2)}
+
+/* ── HAMBURGER ── */
+.hamburger{
+  display:none;
+  background:transparent;border:none;cursor:pointer;
+  padding:10px;flex-direction:column;gap:5px;
+  flex-shrink:0;
+}
+.hamburger span{
+  display:block;width:20px;height:1.5px;
+  background:var(--ink);transition:all .2s ease;
+  transform-origin:center;
+}
+.hamburger.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
+.hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
+
+/* Sidebar overlay/backdrop */
+.sb-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(26,24,20,.45);z-index:39;
+}
+.sb-overlay.vis{display:block}
+
+/* ── BOTTOM NAV ── */
+.bnav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  height:56px;background:var(--paper);
+  border-top:1px solid var(--rule2);
+  z-index:40;
+}
+.bnav-inner{display:flex;height:100%}
+.bn{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:2px;border:none;background:transparent;
+  cursor:pointer;color:var(--ink3);
+  font-family:var(--M);font-size:8px;
+  letter-spacing:1.5px;text-transform:uppercase;
+  transition:color .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.bn:hover,.bn.on{color:var(--ink)}
+.bn.on{border-top:2px solid var(--red);margin-top:-2px}
+.bn-icon{font-size:16px;line-height:1}
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  .shell { flex-direction: column }
+
+  /* Hamburger + Bottom Nav visible */
+  .hamburger{display:flex}
+  .bnav{display:block}
+
+  /* Sidebar: slide-in overlay */
+  .sb{
+    position:fixed;top:0;left:0;bottom:0;
+    width:220px!important;height:100%!important;
+    flex-direction:column!important;
+    overflow-y:auto!important;overflow-x:hidden!important;
+    border-right:1px solid var(--rule2)!important;
+    border-bottom:none!important;
+    transform:translateX(-100%);
+    transition:transform .2s ease;
+    z-index:40;
+  }
+  .sb.open{transform:translateX(0)}
+
+  /* Restore vertical nav inside slide-in */
+  .wm{border-bottom:2px solid var(--ink)!important;border-right:none!important;padding:17px 16px 13px!important;display:block!important}
+  .wm-sub{display:block!important}
+  .nav{flex-direction:column!important;padding:5px 0!important;align-items:stretch!important;overflow-x:hidden!important}
+  .nl{display:block!important}
+  .ni{min-height:36px!important;border-left:2px solid transparent!important;border-bottom:none!important;padding:7px 16px!important;flex-shrink:0!important}
+  .ni.on{border-left-color:var(--red)!important;border-bottom-color:transparent!important}
+  .sf{display:grid!important}
+
+  /* Pad main content above bottom nav */
+  .main{padding-bottom:56px}
+
+  /* Topbar: no left padding (hamburger provides it) */
+  .topbar{padding-left:0}
+
+  /* Detail panel: full-screen overlay */
+  .pnl.open{
+    position:fixed;inset:0;
+    width:100%;min-width:0;
+    z-index:50;overflow-y:auto;
+  }
+  .pi{width:100%;min-width:0}
+
+  .tb-s{display:none}
+  .toast{bottom:72px;right:16px;max-width:calc(100vw - 32px)}
+}
 </style>
 </head>
 <body>
@@ -362,12 +457,12 @@ body::before{
 <!-- MAIN -->
 <main class="main">
   <div class="topbar">
+    <button class="hamburger" id="hbg" onclick="toggleSb()" aria-label="Menu"><span></span><span></span><span></span></button>
     <div class="tb-t" id="vtitle">Library<span class="tb-s" id="vsub">— All Tracks</span></div>
     <button class="btn b-out" onclick="document.getElementById('fi').click()">+ Import</button>
     <button class="btn b-out" onclick="loadDemo()">Demo</button>
     <button class="btn b-out" onclick="runAI()" id="aib">Analyze</button>
     <button class="btn b-out" onclick="checkLicenses()">⚠ Lizenzen</button>
-    <button class="btn b-out" onclick="checkLicenses()">⚠ License</button>
     <button class="btn b-red" onclick="openExp()">Export RB</button>
   </div>
 
@@ -492,14 +587,27 @@ body::before{
   </div>
 </div>
 
+<!-- SIDEBAR OVERLAY -->
+<div class="sb-overlay" id="sb-overlay" onclick="closeSb()"></div>
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <div class="bnav-inner">
+    <button class="bn on" id="bn-tracks" onclick="bnav('library',this)"><span class="bn-icon">🎵</span>Tracks</button>
+    <button class="bn" id="bn-artists" onclick="bnav('artists',this)"><span class="bn-icon">🎤</span>Artists</button>
+    <button class="bn" id="bn-sets" onclick="bnav('set',this)"><span class="bn-icon">📋</span>Sets</button>
+    <button class="bn" id="bn-export" onclick="openExp()"><span class="bn-icon">📦</span>Export</button>
+  </div>
+</nav>
+
 <!-- TOAST -->
 <div class="toast" id="toast"><div class="tled" id="tled"></div><span id="tmsg"></span></div>
 
 <script>
-/* ── STATE ── */
+// ═══ STATE & PERSISTENCE ═══
 let tracks=[], artists=[], sel=null, fil='all', q='';
 
-/* ── VINYL SVG ── */
+// ═══ UI RENDERING ═══
 const LC={
   'Deep House':    {bg:'#1a1814',label:'#c0392b',text:'#f2efe8'},
   'House':         {bg:'#1a1814',label:'#2a5a8a',text:'#f2efe8'},
@@ -535,7 +643,6 @@ function vSVGLg(t,sz=220){
   </svg>`;
 }
 
-/* ── LICENSE CONFIG ── */
 const LIC_CONFIG={
   own:     {label:'Eigene Prod.',cls:'lic-own',dot:'ld-own',warn:false},
   licensed:{label:'Lizenziert',cls:'lic-licensed',dot:'ld-licensed',warn:false},
@@ -580,7 +687,7 @@ function loadDemo(){
   toast('15 Demo Tracks geladen','grn');
 }
 
-/* ── FILE IMPORT ── */
+// ═══ TRACK MANAGEMENT ═══
 function fi2(e){proc(Array.from(e.target.files))}
 function dzo(e){e.preventDefault();document.getElementById('dz').classList.add('drag')}
 function dzl(){document.getElementById('dz').classList.remove('drag')}
@@ -598,18 +705,28 @@ function proc(fs){
   sts();ren();show();save();toast(`${fs.length} Tracks importiert`);
 }
 
-/* ── COVER ── */
 function uploadCover(id){
   const inp=document.createElement('input');inp.type='file';inp.accept='image/*';
   inp.onchange=e=>{
     const f=e.target.files[0];if(!f)return;
     const r=new FileReader();
-    r.onload=ev=>{const t=tracks.find(t=>t.id===id);if(t){t.cover=ev.target.result;ren();rp();toast('Cover hinzugefügt','grn')}};
+    r.onload=ev=>{
+      const t=tracks.find(t=>t.id===id);if(!t)return;
+      const img=new Image();
+      img.onload=()=>{
+        const MAX=200;
+        const scale=Math.min(1,MAX/Math.max(img.width,img.height));
+        const c=document.createElement('canvas');
+        c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
+        c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+        t.cover=c.toDataURL('image/jpeg',0.8);ren();rp();save();toast('Cover hinzugefügt','grn');
+      };
+      img.src=ev.target.result;
+    };
     r.readAsDataURL(f);
   };inp.click();
 }
 
-/* ── AI ANALYSIS ── */
 async function runAI(){
   const todo=tracks.filter(t=>!t.a);
   if(!todo.length){toast('Alle Tracks analysiert');return}
@@ -636,10 +753,9 @@ async function runAI(){
   }
   document.getElementById('ab').classList.remove('vis');
   document.getElementById('aib').disabled=false;
-  sts();toast('Analyse abgeschlossen','grn');
+  save();sts();toast('Analyse abgeschlossen','grn');
 }
 
-/* ── RENDER ── */
 function show(){
   document.getElementById('dz').style.display='none';
   document.getElementById('fb').classList.add('vis');
@@ -712,29 +828,12 @@ function sts(){
   document.getElementById('s4-warn').textContent=unlicensed>0?'⚠ Unl.':'Genres';
 }
 
-/* ── FILTERS ── */
 function sf(f,el){fil=f;document.querySelectorAll('.fp').forEach(p=>p.className='fp');el.className='fp on';ren()}
 function qf(f){fil=f;ren()}
 function lf(f){fil=f;ren()}
 function doQ(v){q=v;ren()}
 
-/* ── LICENSE CHECK ── */
-function checkLicenses(){
-  const warn=tracks.filter(t=>t.lic==='none'||t.lic==='unknown');
-  if(!warn.length){toast('Alle Tracks lizenziert ✓','grn');return}
-  document.getElementById('lic-modal-body').innerHTML=warn.map(t=>`
-    <div class="lic-row">
-      <div class="lic-row-cover">${t.cover?`<img src="${t.cover}">`:`<div style="width:28px;height:28px">${vSVG(t,28)}</div>`}</div>
-      <div class="lic-row-info">
-        <div class="lic-row-title">${t.title}</div>
-        <div class="lic-row-artist">${t.artist}</div>
-      </div>
-      ${licBadge(t.lic)}
-    </div>`).join('');
-  document.getElementById('licmod').classList.add('open');
-}
-
-/* ── ARTISTS VIEW ── */
+// ═══ ARTIST MANAGEMENT ═══
 function renderArtists(){
   const grid=document.getElementById('artist-grid');
   if(!artists.length){
@@ -790,7 +889,6 @@ function selArtist(id){
   document.getElementById('pnl').classList.add('open');
 }
 
-/* ── TRACK PANEL ── */
 function selT(id){
   sel=tracks.find(t=>t.id===id);
   document.getElementById('pnl').classList.add('open');
@@ -868,28 +966,27 @@ function rp(){
 
 function updGenres(id,val){
   const t=tracks.find(t=>t.id===id);
-  if(t){t.genres=val.split(',').map(s=>s.trim()).filter(Boolean);ren();}
+  if(t){t.genres=val.split(',').map(s=>s.trim()).filter(Boolean);ren();save();}
 }
 function uE(id,v){const t=tracks.find(t=>t.id===id);if(t){t.energy=+v;const e=document.getElementById('ev2');if(e)e.textContent=v;ren();save();}}
-function sR(id,r){const t=tracks.find(t=>t.id===id);if(t){t.role=r;rp();ren();sts();save();}}
+
 function tV(id,v){
   const t=tracks.find(t=>t.id===id);if(!t)return;
   if(!t.vibe)t.vibe=[];
   const i=t.vibe.indexOf(v);if(i>=0)t.vibe.splice(i,1);else t.vibe.push(v);
-  rp();ren();
+  rp();ren();save();
 }
 function setLic(id,lic){
   const t=tracks.find(t=>t.id===id);
-  if(t){t.lic=lic;rp();ren();sts();}
+  if(t){t.lic=lic;rp();ren();sts();save();}
 }
-function updLicNote(id,v){const t=tracks.find(t=>t.id===id);if(t)t.licNote=v}
+function updLicNote(id,v){const t=tracks.find(t=>t.id===id);if(t){t.licNote=v;save();}}
 function setOwn(id,v){
   const t=tracks.find(t=>t.id===id);
-  if(t){t.isOwn=v;if(v)t.lic='own';rp();ren();sts();}
+  if(t){t.isOwn=v;if(v)t.lic='own';rp();ren();sts();save();}
 }
-function updOwnArtist(id,v){const t=tracks.find(t=>t.id===id);if(t)t.ownArtist=v}
+function updOwnArtist(id,v){const t=tracks.find(t=>t.id===id);if(t){t.ownArtist=v;save();}}
 
-/* ── VIEW SWITCHING ── */
 function goView(v,el){
   ['vl','va','vs'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById(v==='library'?'vl':v==='artists'?'va':'vs').style.display=v==='library'?'flex':'block';
@@ -901,7 +998,7 @@ function goView(v,el){
   if(v==='artists')renderArtists();
 }
 
-/* ── SET PLANNER ── */
+// ═══ SET PLANNER ═══
 const RC2={opener:'var(--green)',build:'var(--blue)',peak:'var(--ink)',closing:'var(--amber)'};
 function buildSet(){
   const dur=parseInt(document.getElementById('sdur').value)||90;
@@ -938,7 +1035,7 @@ function buildSet(){
 }
 function autoFill(){toast('Set auto-filled','grn');buildSet()}
 
-/* ── EXPORT ── */
+// ═══ EXPORT (REKORDBOX) ═══
 function openExp(){
   const tg=tracks.filter(t=>t.role);
   if(!tg.length){toast('Keine getaggten Tracks');return}
@@ -976,7 +1073,6 @@ function dlExp(){
   closeExp();toast('XML heruntergeladen','grn');
 }
 
-/* ── TOAST ── */
 function toast(msg,type){
   const el=document.getElementById('toast');
   document.getElementById('tmsg').textContent=msg;
@@ -986,16 +1082,54 @@ function toast(msg,type){
   setTimeout(()=>el.classList.remove('show'),2500);
 }
 
+function save(){
+  try{
+    localStorage.setItem('setflow-data',JSON.stringify({tracks,artists}));
+    localStorage.setItem('setflow_v3_version','1');
+  }catch(e){
+    if(e.name==='QuotaExceededError'){toast('Storage voll — Cover oder Tracks löschen','');}
+    else{console.error('SetFlow: Speichern fehlgeschlagen.',e);}
+  }
+}
+function load(){
+  try{
+    const stored=localStorage.getItem('setflow-data');
+    if(!stored)return;
+    const d=JSON.parse(stored);
+    tracks=Array.isArray(d.tracks)?d.tracks:[];
+    artists=Array.isArray(d.artists)?d.artists:[];
+  }catch(e){
+    tracks=[];artists=[];
+    localStorage.removeItem('setflow-data');
+    console.warn('SetFlow: Gespeicherte Daten waren korrupt und wurden zurückgesetzt.',e);
+  }
+}
+
+// ═══ KEYBOARD SHORTCUTS ═══
+function toggleSb(){
+  document.getElementById('hbg').classList.toggle('open');
+  document.querySelector('.sb').classList.toggle('open');
+  document.getElementById('sb-overlay').classList.toggle('vis');
+}
+function closeSb(){
+  document.getElementById('hbg').classList.remove('open');
+  document.querySelector('.sb').classList.remove('open');
+  document.getElementById('sb-overlay').classList.remove('vis');
+}
+function bnav(v,el){
+  document.querySelectorAll('.bn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  closeSb();
+  goView(v,null);
+}
+
+// ═══ INIT ═══
 load();sts();buildSet();
-// LICENSE CHECK
 function checkLicenses(){const warn=tracks.filter(t=>t.lic==='none'||t.lic==='unknown');if(!warn.length){toast('All licensed ✓','grn');return;}const html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px"><div style="background:var(--paper2);padding:12px;border-left:4px solid var(--green)"><div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3)">Compliant</div><div style="font-size:24px;font-weight:600;color:var(--green)">'+tracks.filter(t=>t.lic!=='none'&&t.lic!=='unknown').length+'</div></div></div>';document.getElementById('lic-modal-body').innerHTML=html;if(!document.getElementById('licmod')){const m=document.createElement('div');m.id='licmod';m.className='modal';m.innerHTML='<div class="modal-content" style="max-width:380px"><button style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:20px;cursor:pointer" onclick="closeCheckLic()">×</button><div style="font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:16px">License Status</div><div id="lic-modal-body"></div></div>';document.body.appendChild(m);}document.getElementById('licmod').classList.add('open');}
-function closeCheckLic(){const m=document.getElementById('licmod');if(m)m.classList.remove('open');}
-// GIG PLANNER
 function openGigPlanner(id,role){sel=tracks.find(x=>x.id===id);if(!sel)return;if(!document.getElementById('gig-modal')){const m=document.createElement('div');m.id='gig-modal';m.className='modal';m.innerHTML='<div class="modal-content" style="max-width:380px;position:relative"><div id="gig-modal-body"></div></div>';document.body.appendChild(m);}const html='<button style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:20px;cursor:pointer" onclick="closeGigPlanner()">×</button><div style="font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:12px">'+sel.title+' — '+role+'</div><div style="margin-bottom:10px"><input type="date" id="gig-date" style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="margin-bottom:10px"><input type="text" id="gig-venue" placeholder="Venue..." style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="margin-bottom:10px"><input type="time" id="gig-time" style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="display:flex;gap:8px"><button class="btn b-out" style="flex:1" onclick="closeGigPlanner()">Cancel</button><button class="btn b-grn" style="flex:1" onclick="saveGigPlan()">Save</button></div>';document.getElementById('gig-modal-body').innerHTML=html;document.getElementById('gig-modal').classList.add('open');}
 function closeGigPlanner(){const m=document.getElementById('gig-modal');if(m)m.classList.remove('open');}
-function saveGigPlan(){const d=document.getElementById('gig-date')?.value,v=document.getElementById('gig-venue')?.value;if(sel&&d){sel.gigDate=d;sel.gigVenue=v||'—';toast(sel.role+' @ '+(v||'?')+', '+d,'grn');closeGigPlanner();ren();}};
-// UPLOAD PRODUCTION
-function uploadOwnProduction(){const inp=document.createElement('input');inp.type='file';inp.accept='audio/*';inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const nm=f.name.replace(/\.[^.]+$/,'');const r=new FileReader();r.onload=ev=>{const nt={id:Date.now(),title:nm,artist:'YOU',bpm:null,genres:[],energy:null,role:null,vibe:[],key:null,dur:null,a:false,cover:null,lic:'own',licNote:'Own production',isOwn:true,ownArtist:'YOU'};tracks.push(nt);ren();sts();toast('Production uploaded','grn')};r.readAsDataURL(f)};inp.click();}
+function saveGigPlan(){const d=document.getElementById('gig-date')?.value,v=document.getElementById('gig-venue')?.value;if(sel&&d){sel.gigDate=d;sel.gigVenue=v||'—';save();toast(sel.role+' @ '+(v||'?')+', '+d,'grn');closeGigPlanner();ren();}};
+function uploadOwnProduction(){const inp=document.createElement('input');inp.type='file';inp.accept='audio/*';inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const nm=f.name.replace(/\.[^.]+$/,'');const r=new FileReader();r.onload=ev=>{const nt={id:Date.now(),title:nm,artist:'YOU',bpm:null,genres:[],energy:null,role:null,vibe:[],key:null,dur:null,a:false,cover:null,lic:'own',licNote:'Own production',isOwn:true,ownArtist:'YOU'};tracks.push(nt);ren();sts();save();toast('Production uploaded','grn')};r.readAsDataURL(f)};inp.click();}
 </script>
 </body>
 </html>
