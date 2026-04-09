@@ -8,11 +8,14 @@ import jwt from 'jsonwebtoken';
 import pg from 'pg';
 
 const PORT = process.env.PORT || 3001;
+const VERSION = '0.4.0';
 
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'https://lucislitonai.github.io',
+  'https://djstash.app',
+  'https://www.djstash.app',
 ];
 
 // ─── Auth Config ──────────────────────────────────────────────────────────────
@@ -38,8 +41,29 @@ async function migrate() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tracks (
+      id         TEXT NOT NULL,
+      user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      data       JSONB NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (id, user_id)
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS artists (
+      id         TEXT NOT NULL,
+      user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      data       JSONB NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (id, user_id)
+    );
+  `);
+
   const { rows } = await pool.query('SELECT COUNT(*) AS count FROM users');
-  console.log(`Database ready (${rows[0].count} users)`);
+  console.log(`SetFlow v${VERSION} — Database ready (${rows[0].count} users)`);
 }
 
 // ─── Helper Functions ─────────────────────────────────────────────────────────
@@ -67,12 +91,11 @@ function authRequired(req, res, next) {
 const app = express();
 const httpServer = createServer(app);
 
-app.use(cors({ origin: ALLOWED_ORIGINS, methods: ['GET', 'POST'] }));
-app.use(express.json());
+app.use(cors({ origin: ALLOWED_ORIGINS, methods: ['GET', 'POST', 'PUT', 'DELETE'] }));
+app.use(express.json({ limit: '10mb' })); // covers base64 covers
 
-// ─── REST Endpoints ───────────────────────────────────────────────────────────
+// ─── REST: Auth ───────────────────────────────────────────────────────────────
 
-// Auth: Register
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password, name } = req.body;
@@ -101,7 +124,6 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-// Auth: Login
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -123,7 +145,6 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Auth: Get current user
 app.get('/api/auth/me', authRequired, async (req, res) => {
   const result = await pool.query('SELECT id, email, name FROM users WHERE email = $1', [req.user.email]);
   const user = result.rows[0];
@@ -131,24 +152,113 @@ app.get('/api/auth/me', authRequired, async (req, res) => {
   res.json({ user });
 });
 
-// Health
-app.get('/api/health', async (_req, res) => {
+// ─── REST: Sync (bulk pull on login) ─────────────────────────────────────────
+
+// Pull all data for user — called once on connect/login
+app.get('/api/sync', authRequired, async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT COUNT(*) AS count FROM users');
-    res.json({ status: 'ok', version: '0.3.0', db: 'postgres', users: parseInt(rows[0].count) });
+    const [tracksRes, artistsRes] = await Promise.all([
+      pool.query('SELECT data FROM tracks WHERE user_id = $1 ORDER BY updated_at ASC', [req.user.id]),
+      pool.query('SELECT data FROM artists WHERE user_id = $1 ORDER BY updated_at ASC', [req.user.id]),
+    ]);
+    res.json({
+      tracks:  tracksRes.rows.map(r => r.data),
+      artists: artistsRes.rows.map(r => r.data),
+    });
   } catch (e) {
-    res.json({ status: 'degraded', version: '0.3.0', db: 'error', error: e.message });
+    console.error('Sync pull error:', e);
+    res.status(500).json({ error: 'Sync failed' });
   }
 });
 
-app.get('/api/sets', authRequired, (req, res) => {
-  // TODO: load sets from DB (filtered by req.user.id)
-  res.json({ sets: [] });
+// Push full snapshot — called on first sync or manual push
+app.post('/api/sync', authRequired, async (req, res) => {
+  try {
+    const { tracks = [], artists = [] } = req.body;
+    const uid = req.user.id;
+
+    // Upsert tracks
+    for (const t of tracks) {
+      if (!t.id) continue;
+      await pool.query(`
+        INSERT INTO tracks (id, user_id, data, updated_at)
+        VALUES ($1, $2, $3, NOW())
+        ON CONFLICT (id, user_id) DO UPDATE SET data = $3, updated_at = NOW()
+      `, [String(t.id), uid, t]);
+    }
+
+    // Upsert artists
+    for (const a of artists) {
+      if (!a.id) continue;
+      await pool.query(`
+        INSERT INTO artists (id, user_id, data, updated_at)
+        VALUES ($1, $2, $3, NOW())
+        ON CONFLICT (id, user_id) DO UPDATE SET data = $3, updated_at = NOW()
+      `, [String(a.id), uid, a]);
+    }
+
+    res.json({ ok: true, tracks: tracks.length, artists: artists.length });
+  } catch (e) {
+    console.error('Sync push error:', e);
+    res.status(500).json({ error: 'Sync push failed' });
+  }
 });
 
-app.post('/api/sets', authRequired, (req, res) => {
-  // TODO: persist set (associated with req.user.id)
-  res.status(501).json({ message: 'not implemented yet' });
+// ─── REST: Tracks (single-item mutations) ─────────────────────────────────────
+
+app.post('/api/tracks', authRequired, async (req, res) => {
+  try {
+    const track = req.body;
+    if (!track?.id) return res.status(400).json({ error: 'Track id required' });
+    await pool.query(`
+      INSERT INTO tracks (id, user_id, data, updated_at)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (id, user_id) DO UPDATE SET data = $3, updated_at = NOW()
+    `, [String(track.id), req.user.id, track]);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Track save error:', e);
+    res.status(500).json({ error: 'Save failed' });
+  }
+});
+
+app.delete('/api/tracks/:id', authRequired, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM tracks WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Track delete error:', e);
+    res.status(500).json({ error: 'Delete failed' });
+  }
+});
+
+// ─── REST: Artists ────────────────────────────────────────────────────────────
+
+app.post('/api/artists', authRequired, async (req, res) => {
+  try {
+    const artist = req.body;
+    if (!artist?.id) return res.status(400).json({ error: 'Artist id required' });
+    await pool.query(`
+      INSERT INTO artists (id, user_id, data, updated_at)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (id, user_id) DO UPDATE SET data = $3, updated_at = NOW()
+    `, [String(artist.id), req.user.id, artist]);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Artist save error:', e);
+    res.status(500).json({ error: 'Save failed' });
+  }
+});
+
+// ─── REST: Health ─────────────────────────────────────────────────────────────
+
+app.get('/api/health', async (_req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT COUNT(*) AS count FROM users');
+    res.json({ status: 'ok', version: VERSION, db: 'postgres', users: parseInt(rows[0].count) });
+  } catch (e) {
+    res.json({ status: 'degraded', version: VERSION, db: 'error', error: e.message });
+  }
 });
 
 // ─── Socket.io ────────────────────────────────────────────────────────────────
@@ -167,14 +277,55 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
+  const uid = socket.user.id;
+  // Each user gets their own room — only their own tabs sync together
+  socket.join(`user:${uid}`);
   console.log('DJ connected', socket.user.email, socket.id);
 
-  socket.on('set:update', (payload) => {
-    socket.broadcast.emit('set:update', payload);
+  // Broadcast track change to other tabs of same user
+  socket.on('track:update', (payload) => {
+    socket.to(`user:${uid}`).emit('track:update', payload);
   });
 
-  socket.on('set:lock', (payload) => {
-    socket.broadcast.emit('set:lock', payload);
+  socket.on('track:delete', (payload) => {
+    socket.to(`user:${uid}`).emit('track:delete', payload);
+  });
+
+  socket.on('artist:update', (payload) => {
+    socket.to(`user:${uid}`).emit('artist:update', payload);
+  });
+
+  // Full sync broadcast (e.g. after bulk import)
+  socket.on('sync:push', async (payload) => {
+    try {
+      const { tracks = [], artists = [] } = payload;
+      // Persist to DB
+      for (const t of tracks) {
+        if (!t.id) continue;
+        await pool.query(`
+          INSERT INTO tracks (id, user_id, data, updated_at)
+          VALUES ($1, $2, $3, NOW())
+          ON CONFLICT (id, user_id) DO UPDATE SET data = $3, updated_at = NOW()
+        `, [String(t.id), uid, t]);
+      }
+      for (const a of artists) {
+        if (!a.id) continue;
+        await pool.query(`
+          INSERT INTO artists (id, user_id, data, updated_at)
+          VALUES ($1, $2, $3, NOW())
+          ON CONFLICT (id, user_id) DO UPDATE SET data = $3, updated_at = NOW()
+        `, [String(a.id), uid, a]);
+      }
+      // Forward to other tabs
+      socket.to(`user:${uid}`).emit('sync:data', payload);
+    } catch (e) {
+      console.error('sync:push error:', e);
+    }
+  });
+
+  // Legacy events (keep for compatibility)
+  socket.on('set:update', (payload) => {
+    socket.to(`user:${uid}`).emit('set:update', payload);
   });
 
   socket.on('disconnect', () => {
@@ -187,7 +338,7 @@ io.on('connection', (socket) => {
 async function start() {
   await migrate();
   httpServer.listen(PORT, () => {
-    console.log(`SetFlow server v0.3.0 on http://localhost:${PORT} (PostgreSQL)`);
+    console.log(`SetFlow server v${VERSION} on http://localhost:${PORT} (PostgreSQL)`);
   });
 }
 
