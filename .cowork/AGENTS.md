@@ -1,59 +1,68 @@
-SetFlow — Claude Code Agent Instructions
-⚠️ CRITICAL: ALWAYS READ THIS FIRST
-You are working on an EXISTING project.
-DO NOT:
-* Rebuild the app from scratch
-* Create new HTML/JS/CSS files unless explicitly asked
-* Assume the project doesn't exist because you don't see files listed
-ALWAYS DO:
-1. Read the existing file first: `/Users/fynndahouse/Documents/setflow/index.html`
-2. Check this `.cowork/` directory for context and status
-3. Make surgical edits to the existing code only
-4. Confirm what you found before making changes
-Project Location
+# .cowork — Agent Context
+
+This repository serves two parallel purposes:
+
+1. **SetFlow** — DJ Music Organizer (Vanilla JS + Node.js app)
+2. **Lübeck Market Automation** — B2B AI automation consultancy (business docs)
+
+---
+
+## REPO MAP
 
 ```
-/Users/fynndahouse/Documents/setflow/
-├── index.html          ← SINGLE SOURCE OF TRUTH (all HTML, CSS, JS)
-└── .cowork/
-    ├── AGENTS.md       ← this file
-    ├── STATUS.md       ← current build status
-    └── ROADMAP.md      ← feature roadmap
-
+setflow/
+├── client/index.html         ← SetFlow frontend (all HTML/CSS/JS, no build tools)
+├── server/index.js           ← SetFlow backend (Express + Socket.io + PostgreSQL)
+├── AGENTS.md                 ← SetFlow agent context (read this for app work)
+├── README.md                 ← SetFlow project docs
+├── .cowork/                  ← YOU ARE HERE — dual-purpose project context
+│   ├── AGENTS.md             ← this file
+│   ├── ROADMAP.md            ← 9-month Lübeck business roadmap
+│   ├── OVERVIEW.md           ← current state snapshot
+│   ├── GUIDELINES.md         ← async collaboration rules (Luc + Henri)
+│   ├── SYNC_INSTRUCTIONS.md  ← Google Drive sync guide
+│   ├── sprints/              ← month-by-month sprint plans
+│   ├── segments/             ← Gastro + Handwerk playbooks
+│   ├── tech/                 ← automation tech docs
+│   └── async_collab/         ← standup templates + decision log
+└── luebeck/                  ← all Lübeck business artifacts
+    ├── LUEBECK_ROADMAP_MEMORY.md  ← Knowledge Memory export
+    ├── google_drive_setup.md
+    ├── sales/                ← email templates, outreach scripts, proposals
+    ├── research/             ← Gastro + Handwerk target lists
+    └── templates/            ← KPI dashboard, standup, Make.com docs
 ```
 
-Stack
-* Frontend: Vanilla JS + HTML5 + CSS (no build system, single file)
-* Persistence: localStorage (`setflow-data`)
-* Export: Rekordbox XML, JSON backup
-* Hosting: GitHub Pages → lucislitonai.github.io/setflow/
-* Target domain: djstash.app
-* Future: Node.js/Express/Socket.io backend on Railway.app (multi-DJ SaaS)
-Current State (as of April 2026)
-* ✅ Track library with metadata (BPM, Key, Energy, Genre, Role, Vibe tags)
-* ✅ Artist management
-* ✅ Set planner (duration-based, auto-build)
-* ✅ Rekordbox XML export
-* ✅ localStorage persistence (save/load with try/catch)
-* ✅ JSON backup export/import
-* ✅ Keyboard shortcuts (Space, arrows, Enter, Escape)
-* ✅ Mobile layout (drawer sidebar, bottom nav)
-* ✅ License management
-How to Start Any Task
+---
 
-```
-Step 1: Read /Users/fynndahouse/Documents/setflow/index.html
-Step 2: Read /Users/fynndahouse/Documents/setflow/.cowork/STATUS.md
-Step 3: Only then make changes
+## WORKING ON SETFLOW (DJ APP)?
 
-```
+→ Read `/home/user/setflow/AGENTS.md` first — it has the full app context, coding rules, and feature status.
 
-Never skip Step 1 and 2.
+Key rules:
+- Single-file frontend: `client/index.html` (all CSS + JS inline)
+- Always call `save()` after any state mutation
+- No new external dependencies in the frontend
+- Use CSS variables from `:root` — no hardcoded colors
 
+---
 
-Coding Rules
-* Keep everything in `index.html` until backend is introduced
-* Always call `save()` after any state mutation
-* Use `try/catch` around localStorage operations
-* Mobile-first CSS (≤640px breakpoint)
-* No external dependencies unless explicitly approved
+## WORKING ON LÜBECK BUSINESS?
+
+→ Start with `.cowork/ROADMAP.md` for strategic context, then the relevant sprint file or segment playbook.
+
+Key files by task:
+- **Sales call prep** → `luebeck/segments/` playbooks + `luebeck/sales/`
+- **This week's priorities** → `.cowork/sprints/sprint_X_month.md`
+- **KPI update** → `luebeck/templates/kpi_dashboard_template.md`
+- **New business meeting** → `luebeck/sales/proposal_template.md`
+- **Partner outreach (HWK)** → `luebeck/sales/hwk_partnership_pitch_email.md`
+
+---
+
+## TEAM
+
+- **Luc Cassegrain** — Sales, partnerships, client success, local presence in Lübeck
+- **Henri** — Technical architecture, Make.com automation, Gemini workflows
+
+Both work async via Google Drive + GitHub. See `.cowork/GUIDELINES.md` for collaboration rules.
