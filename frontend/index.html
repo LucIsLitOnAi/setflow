@@ -51,7 +51,8 @@
       </div>
       
       <div class="top-bar-right">
-        <button class="btn b-out" style="border-color:var(--signal-primary);color:var(--signal-primary);margin-right:12px" onclick="upgradeToPro()">UPGRADE</button>
+        <button id="upgrade-btn" class="btn b-out" style="border-color:var(--signal-primary);color:var(--signal-primary);margin-right:12px" onclick="upgradeToPro()">UPGRADE</button>
+        <div id="pro-badge" class="status-badge" style="display:none;background:var(--signal-primary);color:var(--paper1);margin-right:12px">PRO</div>
         <div id="connection-status" class="status-badge">OFFLINE</div>
       </div>
     </header>

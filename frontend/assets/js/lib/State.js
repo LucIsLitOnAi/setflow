@@ -9,6 +9,7 @@ export const SETFLOW_STATE = {
   hbSelVinyl: null,
   hbSelTrack: null,
   proPriceId: 'price_1TRZXZJtNW51ix9r9ZnS7me9',
+  isPro: false,
   spPlayheadMin: 0,
   _cpCurve: 'LINEAR',
   _cpProcessing: false,

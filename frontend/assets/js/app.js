@@ -74,6 +74,11 @@ function renderTrackPanel() {
   const LIC_LABELS = { own: 'OWN PROD.', licensed: 'LICENSED', promo: 'PROMO', none: 'NO LIC.', unknown: 'UNKNOWN' };
 
   document.getElementById('pi').innerHTML = `
+    <div class="top-bar-right">
+      <button id="upgrade-btn" class="btn b-out" style="border-color:var(--signal-primary);color:var(--signal-primary);margin-right:12px" onclick="upgradeToPro()">UPGRADE</button>
+      <div id="pro-badge" class="status-badge" style="display:none;background:var(--signal-primary);color:var(--paper1);margin-right:12px">PRO</div>
+      <div id="connection-status" class="status-badge">OFFLINE</div>
+    </div>
     <div class="dp-header">
       <div class="dp-cover" onclick="uploadCover(${t.id})" title="Add cover art">
         ${coverHtml}<div class="dp-cover-overlay">+ COVER</div>
@@ -287,9 +292,27 @@ window.sts = UI.sts;
 document.addEventListener('DOMContentLoaded', () => {
   Session.load();
   socketClient.init();
+  
+  // Check for successful payment
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('success') === 'true') {
+    SETFLOW_STATE.isPro = true;
+    UI.toast('WELCOME TO PRO!', 'grn');
+  }
+
   if (SETFLOW_STATE.tracks.length > 0) UI.show();
   UI.sts(); UI.ren();
+  updateProUI();
 });
+
+function updateProUI() {
+  const upgradeBtn = document.getElementById('upgrade-btn');
+  const proBadge = document.getElementById('pro-badge');
+  if (SETFLOW_STATE.isPro) {
+    if (upgradeBtn) upgradeBtn.style.display = 'none';
+    if (proBadge) proBadge.style.display = 'flex';
+  }
+}
 
 // Resume AudioContext on first user gesture
 document.addEventListener('click', () => audioEngine.resume(), { once: true });
