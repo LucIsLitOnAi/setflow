@@ -1,43 +1,11 @@
-import { SETFLOW_STATE } from './lib/State.js';
+import { SETFLOW_STATE, getState } from './lib/State.js';
 import * as UI from './lib/UIController.js';
 import * as Session from './lib/SessionManager.js';
+import * as socketClient from './socket-client.js';
 import * as Vinyl from './vinyl-engine.js';
-import socketClient from './socket-client.js';
-import AudioEngine from './lib/AudioEngine.js';
+import { audioEngine } from './lib/AudioEngine.js';
 
-// ── ORCHESTRATOR ──
-
-const audioEngine = new AudioEngine();
-
-// Expose to window for legacy HTML handlers
-window.fi2 = (e) => proc(Array.from(e.target.files));
-window.dzo = (e) => { e.preventDefault(); document.getElementById('dz').classList.add('drag'); };
-window.dzl = () => document.getElementById('dz').classList.remove('drag');
-window.dzd = (e) => {
-  e.preventDefault(); window.dzl();
-  const fs = Array.from(e.dataTransfer.files).filter(f => /\.(mp3|wav|aiff|flac|m4a)$/i.test(f.name));
-  if (fs.length) proc(fs);
-};
-
-window.loadDemo = () => {
-  Session.loadDemo();
-  UI.sts(); UI.ren(); UI.show();
-  Session.save();
-  UI.toast('15 Demo Tracks geladen', 'grn');
-  socketClient.syncTracks();
-};
-
-window.selT = (id) => {
-  SETFLOW_STATE.sel = SETFLOW_STATE.tracks.find(t => t.id === id);
-  document.getElementById('pnl').classList.add('open');
-  // Need to implement rvp/renderTrackPanel
-  renderTrackPanel();
-  UI.ren();
-};
-
-window.sf = UI.sf;
-window.doQ = UI.doQ;
-window.goView = UI.goView;
+// ── WINDOW EXPORTS ──
 window.fetchDiscogs = Vinyl.fetchDiscogs;
 window.startScanner = Vinyl.startScanner;
 window.saveVinyl = Vinyl.saveVinyl;
@@ -57,50 +25,32 @@ window.hbSelV = hbSelV;
 window.hbSelT = hbSelT;
 window.hbExecuteLink = hbExecuteLink;
 window.renderHB = renderHB;
+window.upgradeToPro = upgradeToPro;
 
 // ── CORE LOGIC ──
 
-function proc(fs) {
-  const n = Date.now();
-  const newTracks = fs.map((f, i) => {
-    const id = n + i;
-    const nm = f.name.replace(/\.[^.]+$/, ''), p = nm.split(' - ');
-    SETFLOW_STATE._trackFiles.set(id, f);
-    return { id, title: p[1] || nm, artist: p[0] || 'Unknown', bpm: null, genres: [], energy: null, role: null, vibe: [], key: null, dur: null, a: false, cover: null, lic: 'unknown', licNote: '', isOwn: false, ownArtist: null };
-  });
-  SETFLOW_STATE.tracks = [...SETFLOW_STATE.tracks, ...newTracks];
-  UI.sts(); UI.ren(); UI.show(); Session.save(); UI.toast(`${fs.length} Tracks importiert`);
-  socketClient.syncTracks();
-}
-
 function renderVinyl() {
-  const grid = document.getElementById('vinyl-grid');
-  const empty = document.getElementById('em-vinyl');
-  if (!grid) return;
-  const records = SETFLOW_STATE.vinylRecords;
-  if (records.length === 0) {
-    grid.innerHTML = '';
-    if (empty) empty.style.display = 'block';
-    return;
-  }
-  if (empty) empty.style.display = 'none';
-  grid.innerHTML = records.map(v => `
+  const container = document.getElementById('vinyl-grid');
+  if (!container) return;
+  container.innerHTML = SETFLOW_STATE.vinylRecords.map(v => `
     <div class="vinyl-card" onclick="selVinyl(${v.id})">
-      <div class="vinyl-card-cover" style="display:flex;align-items:center;justify-content:center">
-        ${v.cover ? `<img src="${v.cover}" style="width:100%;height:100%;object-fit:cover;">` : `<span class="icon-wrapper">${UI.getIcon('ORBIT', 60)}</span>`}
+      <div class="vinyl-card-cover">
+        ${v.cover ? `<img src="${v.cover}" alt="">` : `<div class="dp-cover-default">${UI.getIcon('ORBIT', 32)}</div>`}
       </div>
-      <div class="vinyl-card-title">${v.title || 'Unknown Title'}</div>
-      <div class="vinyl-card-meta">${v.artist || 'Unknown Artist'}</div>
-      <div class="vinyl-card-meta" style="font-size:9px">${v.label || ''} ${v.year ? '· ' + v.year : ''}</div>
-    </div>`).join('');
+      <div class="vinyl-card-info">
+        <div class="v-title">${v.title}</div>
+        <div class="v-artist">${v.artist}</div>
+      </div>
+    </div>
+  `).join('') + `
+    <div class="vinyl-card add-card" onclick="addVinyl()">
+      <div class="add-icon">+</div>
+      <div class="add-text">Add Record</div>
+    </div>
+  `;
 }
 
 function addVinyl() {
-  const sel2 = document.getElementById('v-link');
-  if (sel2) {
-    sel2.innerHTML = '<option value="">-- No Digital Track --</option>' +
-      SETFLOW_STATE.tracks.map(t => `<option value="${t.id}">${t.artist} — ${t.title}</option>`).join('');
-  }
   ['v-search', 'v-title', 'v-artist', 'v-label', 'v-year'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -112,12 +62,6 @@ function addVinyl() {
 }
 
 function closeVModal() {
-  if (SETFLOW_STATE._scanner) {
-    SETFLOW_STATE._scanner.stop().catch(() => { });
-    SETFLOW_STATE._scanner = null;
-  }
-  const scannerContainer = document.getElementById('scanner-container');
-  if (scannerContainer) scannerContainer.style.display = 'none';
   document.getElementById('vmodal').classList.remove('open');
 }
 
@@ -313,6 +257,25 @@ function hbExecuteLink() {
     socketClient.syncVinyl();
     socketClient.syncTracks();
   }, 1400);
+}
+
+async function upgradeToPro() {
+  const priceId = SETFLOW_STATE.proPriceId;
+  if (!priceId) {
+    UI.toast('Pro configuration missing. Please contact support.', 'red');
+    return;
+  }
+  try {
+    const res = await fetch('/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ priceId })
+    });
+    const { url } = await res.json();
+    if (url) window.location.href = url;
+  } catch (err) {
+    UI.toast('Failed to start checkout.', 'red');
+  }
 }
 
 window.renderTrackPanel = renderTrackPanel;

@@ -8,6 +8,7 @@ export const SETFLOW_STATE = {
   q: '',
   hbSelVinyl: null,
   hbSelTrack: null,
+  proPriceId: 'price_1TRZXZJtNW51ix9r9ZnS7me9',
   spPlayheadMin: 0,
   _cpCurve: 'LINEAR',
   _cpProcessing: false,
