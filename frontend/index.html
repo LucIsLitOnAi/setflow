@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SETFLOW // TECHNICAL INTERFACE</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- SETFLOW CSS — Modular Architecture -->
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/layout.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/landing.css">
+<link rel="stylesheet" href="assets/css/heritage-reset.css">
+</head>
+<body>
+<div class="grain-overlay"></div>
+
+<!-- ══ LANDING SCREEN — Phase 1: The Heart ══ -->
+<div id="lp-screen">
+
+  <!-- Layer 0: Three-panel Signal Flow Background -->
+  <div class="lp-bg">
+    <div class="lp-bg-panel">
+      <img src="assets/images/backgrounds/bg_vinyl.png" alt="">
+    </div>
+    <div class="lp-bg-panel">
+      <img src="assets/images/backgrounds/bg_cassette.png" alt="">
+    </div>
+    <div class="lp-bg-panel">
+      <img src="assets/images/backgrounds/bg_digital.png" alt="">
+    </div>
+  </div>
+
+  <!-- Layer 1: Header -->
+  <div class="lp-header">
+    <div class="lp-title-row">
+      <h1 class="lp-title">SETFLO<span style="position:relative;display:inline-block">W<span class="lp-led" id="lp-led"></span></span></h1>
+    </div>
+    <p class="lp-subtitle">Your DJ Music Organizer</p>
+    <div class="lp-rule"></div>
+  </div>
+
+  <!-- Layer 2: Inset Drop Panel -->
+  <div class="lp-dropzone" id="lp-dz"
+       onclick="document.getElementById('fi').click()"
+       ondragover="lpDragOver(event)"
+       ondragleave="lpDragLeave(event)"
+       ondrop="lpDrop(event)">
+
+    <!-- Vinyl icon -->
+    <div class="lp-drop-icon">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="18" stroke="#e0ddd5" stroke-width="1"/>
+        <circle cx="20" cy="20" r="13" stroke="#e0ddd5" stroke-width="0.5" stroke-dasharray="2 2"/>
+        <circle cx="20" cy="20" r="8"  stroke="#e0ddd5" stroke-width="0.5"/>
+        <circle cx="20" cy="20" r="3"  fill="#e0ddd5"/>
+      </svg>
+    </div>
+
+    <div class="lp-drop-title">Drop Your Records Here</div>
+
+    <div class="lp-drop-formats">
+      <span>Digital:</span> MP3 · WAV · AIFF · FLAC<br>
+      <div class="lp-format-rule"></div>
+      <span>Analog:</span> Vinyl · CD · Cassette · R2R Tapes
+    </div>
+
+    <div class="lp-demo-hint" onclick="event.stopPropagation(); loadDemo()">
+      ← Load Demo Session
+    </div>
+  </div>
+
+  <!-- System ref -->
+  <div class="lp-sysref">SETFLOW // SIGNAL_READY // AWAITING_INPUT</div>
+</div>
+<!-- ══ /LANDING SCREEN ══ -->
+
+<!-- BACKGROUND LAYER START -->
+<div class="setflow-bg-container">
+  <div class="bg-panel-img"><img src="assets/images/backgrounds/bg_vinyl.png" alt=""></div>
+  <div class="bg-panel-img"><img src="assets/images/backgrounds/bg_cassette.png" alt=""></div>
+  <div class="bg-panel-img"><img src="assets/images/backgrounds/bg_digital.png" alt=""></div>
+</div>
+<!-- BACKGROUND LAYER END -->
+
+<div class="shell">
+
+<!-- ZONE LEFT: THE SOURCE (LIBRARY) -->
+<div class="zone-left">
+  <div class="topbar">
+    <div class="tb-t" id="vtitle">The Source<span class="tb-s" id="vsub" style="font-family:var(--font-mono)">— Library</span></div>
+    <button class="btn b-out" onclick="document.getElementById('fi').click()" style="box-shadow:var(--shadow-raised)">+ Import</button>
+    <button class="btn b-out" onclick="loadDemo()" style="box-shadow:var(--shadow-raised)">Demo</button>
+    <button class="btn b-out" onclick="openIE(sel)" id="aib" style="box-shadow:var(--shadow-raised)">Analyze</button>
+    <button class="btn b-red" onclick="openExp()" style="box-shadow:var(--shadow-raised)">Export RB</button>
+    <input class="topbar-search" id="topbar-search" type="text" placeholder="SEARCH..." oninput="doQ(this.value)" style="box-shadow:var(--shadow-inset); font-family:var(--font-mono)">
+    <div class="auth-user" id="auth-btn" onclick="toggleAuthMenu()" title="Account">
+      <span id="auth-btn-label">Login</span>
+    </div>
+    <div class="conn-wrap" id="conn-wrap" title="Server connection">
+      <span class="conn-dot" id="conn-dot"></span>
+      <span class="conn-label" id="conn-label" style="font-family:var(--font-mono)">—</span>
+    </div>
+  </div>
+
+  <div id="vl" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+    <div class="ct">
+      <div class="dz" id="dz" onclick="document.getElementById('fi').click()" ondragover="dzo(event)" ondragleave="dzl()" ondrop="dzd(event)">
+        <input type="file" id="fi" multiple accept=".mp3,.wav,.aiff,.flac,.m4a" onchange="fi2(event)">
+        <div class="dz-vinyl">
+          <span class="icon-wrapper" id="dz-icon"></span>
+        </div>
+        <h3>Drop your records here</h3>
+        <p>MP3 · WAV · AIFF · FLAC<br>oder klick "Demo" zum Starten</p>
+        <div class="dz-tag">← Demo Data</div>
+      </div>
+
+      <div class="fb" id="fb">
+        <button class="fp on" onclick="sf('all',this)">All</button>
+        <button class="fp" onclick="sf('opener',this)">Opener</button>
+        <button class="fp" onclick="sf('build',this)">Build</button>
+        <button class="fp" onclick="sf('peak',this)">Peak</button>
+        <button class="fp" onclick="sf('closing',this)">Closing</button>
+        <button class="fp" onclick="sf('untagged',this)">Untagged</button>
+        <button class="fp" onclick="sf('lic-warn',this)" style="margin-left:8px">⚠ Lizenz</button>
+      </div>
+
+      <div class="ab" id="ab">
+        <span class="ab-txt">Analyzing</span>
+        <span class="ab-s" id="apt"></span>
+        <div class="pt"><div class="pf" id="ap" style="width:0%"></div></div>
+      </div>
+
+      <table class="tbl" id="tbl" style="display:none">
+        <thead><tr>
+          <th style="width:28px">#</th>
+          <th style="width:44px"></th>
+          <th>Title / Artist</th>
+          <th>Genre</th>
+          <th>BPM</th>
+          <th>Energy</th>
+          <th>Role</th>
+          <th>Lizenz</th>
+        </tr></thead>
+        <tbody id="tbd"></tbody>
+      </table>
+      <div class="emp" id="em" style="display:none"><span class="emp-i">— no records —</span></div>
+    </div> <!-- /ct -->
+  </div> <!-- /vl -->
+</div> <!-- /zone-left -->
+
+<!-- ZONE MID: THE ENGINE (HYBRID BRIDGE + SEQUENCER) -->
+<div class="zone-mid">
+  <!-- HYBRID BRIDGE MODULE -->
+  <div id="vhb" style="display:flex;flex-direction:column;flex:1;overflow-y:auto;border-bottom:1px solid var(--border-color);">
+    <div class="module-container hybrid-bridge-module">
+
+      <!-- TOP BAR -->
+      <div class="hb-topbar">
+        <div>
+          <div class="lvl-1" style="letter-spacing:3px;margin-bottom:4px">HYBRID BRIDGE</div>
+          <div class="lvl-3" style="letter-spacing:2px">PHYSICAL ↔ DIGITAL MAPPING STATION</div>
+        </div>
+        <span class="lvl-3" id="hb-link-stats-top" style="letter-spacing:1.5px">0 LINKS ACTIVE</span>
+      </div>
+
+      <!-- 3-COLUMN GRID -->
+      <div class="hb-grid">
+
+        <!-- PHYSICAL SIDE -->
+        <div class="hb-col hb-physical">
+          <div class="hb-col-header">
+            <span class="lvl-3">PHYSICAL / VINYL</span>
+            <span class="lvl-3" id="hb-vinyl-count">0 RECORDS</span>
+          </div>
+          <div class="hb-list" id="hb-vinyl-list"></div>
+        </div>
+
+        <!-- BRIDGE ZONE -->
+        <div class="hb-col hb-bridge">
+          <div class="hb-col-header" style="justify-content:center">
+            <span class="lvl-3" style="letter-spacing:2px">BRIDGE</span>
+          </div>
+
+          <div class="hb-bridge-visual" id="hb-bridge-visual">
+            <!-- IDLE STATE -->
+            <div class="hb-state-idle" id="hb-idle">
+              <div class="hb-idle-ring"></div>
+              <span class="lvl-3" style="text-align:center;line-height:2;letter-spacing:1.5px">SELECT<br>BOTH<br>SIDES</span>
+            </div>
+            <!-- READY STATE -->
+            <div class="hb-state-ready" id="hb-ready">
+              <span class="hb-ready-label" id="hb-ready-vinyl-label">—</span>
+              <div class="hb-connector">
+                <div class="hb-connector-line"></div>
+                <div class="hb-connector-node"></div>
+                <div class="hb-connector-line"></div>
+              </div>
+              <span class="hb-ready-label" id="hb-ready-track-label">—</span>
+            </div>
+            <!-- LINKED STATE -->
+            <div class="hb-state-linked" id="hb-linked-state">
+              <div class="hb-linked-check">✓</div>
+              <span class="hb-linked-text">LINK<br>ACTIVE</span>
+            </div>
+          </div>
+
+          <div class="hb-execute-area">
+            <button class="tech-btn" id="hb-execute-btn" onclick="hbExecuteLink()">EXECUTE LINK</button>
+            <span class="hb-exec-label" id="hb-exec-label">SELECT BOTH SIDES</span>
+          </div>
+        </div>
+
+        <!-- DIGITAL SIDE -->
+        <div class="hb-col hb-digital">
+          <div class="hb-col-header">
+            <span class="lvl-3">DIGITAL / TRACKS</span>
+            <span class="lvl-3" id="hb-track-count">0 TRACKS</span>
+          </div>
+          <div class="hb-list" id="hb-track-list"></div>
+        </div>
+
+      </div><!-- /hb-grid -->
+    </div><!-- /hybrid-bridge-module -->
+  </div><!-- /vhb -->
+
+  <!-- PERFORMANCE SEQUENCER -->
+  <div id="vseq" style="display:flex;flex:1;flex-direction:column;overflow:hidden">
+    <div class="module-container set-planner-module">
+
+      <!-- TOP BAR -->
+      <div class="sp-topbar">
+        <div class="sp-live-dot"></div>
+        <div class="sp-topbar-title">
+          <span class="lvl-1" style="letter-spacing:3px">PERFORMANCE SEQUENCER</span>
+          <span class="lvl-3" style="letter-spacing:1.5px">SET CONSTRUCTION ENGINE v1.0</span>
+        </div>
+        <select class="sp-select" id="sp-dur-sel" onchange="renderSP()">
+          <option value="60">60 MIN</option>
+          <option value="90" selected>90 MIN</option>
+          <option value="120">120 MIN</option>
+          <option value="180">180 MIN</option>
+        </select>
+        <select class="sp-select" id="sp-type-sel">
+          <option>MAIN SET — NIGHT</option>
+          <option>OPENING SET</option>
+          <option>CLOSING SET</option>
+          <option>DAY SET</option>
+          <option>SUNSET SET</option>
+        </select>
+        <div class="sp-topbar-spacer"></div>
+        <button class="tech-btn" onclick="renderSP()">↺ REFRESH</button>
+        <button class="tech-btn primary" onclick="spAutoFill()">AUTO-FILL</button>
+      </div>
+
+      <!-- SEQUENCER BODY -->
+      <div class="sp-body">
+
+        <!-- LABELS COLUMN (sticky left) -->
+        <div class="sp-labels-col">
+          <div class="sp-lc-ruler"></div>
+          <div class="sp-lc-energy">
+            <span class="lvl-3" style="text-align:center;line-height:2;opacity:.55;letter-spacing:1px">NRG<br>CURVE</span>
+          </div>
+          <div class="sp-lc-lane lc-opener">OPEN</div>
+          <div class="sp-lc-lane lc-build">BUILD</div>
+          <div class="sp-lc-lane lc-peak">PEAK</div>
+          <div class="sp-lc-lane lc-closing">CLOSE</div>
+        </div>
+
+        <!-- SCROLLABLE TIMELINE -->
+        <div class="sp-scroll-area" id="sp-scroll" onclick="spClickTimeline(event)">
+          <!-- Vertical time ruler (mobile only) -->
+          <div class="sp-vrule" id="sp-vrule"></div>
+          <div class="sp-inner" id="sp-inner">
+            <!-- Playhead (absolute, spans full height) -->
+            <div class="sp-playhead" id="sp-playhead"></div>
+            <!-- Time ruler -->
+            <div class="sp-ruler" id="sp-ruler"></div>
+            <!-- Energy curve (SVG injected by JS) -->
+            <div class="sp-energy-row" id="sp-energy-row"></div>
+            <!-- Track lanes -->
+            <div class="sp-lane" id="sp-lane-opener"></div>
+            <div class="sp-lane" id="sp-lane-build"></div>
+            <div class="sp-lane" id="sp-lane-peak"></div>
+            <div class="sp-lane" id="sp-lane-closing"></div>
+          </div>
+        </div>
+
+      </div><!-- /sp-body -->
+
+      <!-- HUD — HEADS UP DISPLAY -->
+      <div class="sp-hud">
+        <div class="sp-hud-cell">
+          <span class="sp-hud-label">TOTAL</span>
+          <span class="sp-hud-value" id="sp-hud-dur">90 MIN</span>
+        </div>
+        <div class="sp-hud-cell">
+          <span class="sp-hud-label">AVG BPM</span>
+          <span class="sp-hud-value hud-green" id="sp-hud-bpm">—</span>
+        </div>
+        <div class="sp-hud-cell">
+          <span class="sp-hud-label">ENERGY PEAK</span>
+          <span class="sp-hud-value hud-green" id="sp-hud-peak">—</span>
+        </div>
+        <div class="sp-hud-cell">
+          <span class="sp-hud-label">TRACKS IN SET</span>
+          <span class="sp-hud-value" id="sp-hud-cnt">0</span>
+        </div>
+        <div class="sp-hud-spacer"></div>
+        <div class="sp-hud-cell">
+          <span class="sp-hud-label">PLAYHEAD</span>
+          <span class="sp-hud-value" id="sp-hud-ph" style="color:var(--signal-alert)">00:00</span>
+        </div>
+      </div>
+
+    </div><!-- /set-planner-module -->
+  </div><!-- /vseq -->
+</div> <!-- /zone-mid -->
+
+<!-- ZONE RIGHT: THE INTELLIGENCE (CO-PILOT) -->
+<div class="zone-right">
+
+<div class="co-pilot-wizard" style="width:100%; height:100%; max-width:none; max-height:none; border:none; display:flex; flex-direction:column; box-shadow:none;">
+
+    <!-- HEADER -->
+    <div class="cpw-header">
+      <div class="cpw-status-row">
+        <div class="cpw-dot"></div>
+        <span class="lvl-1" style="color:var(--signal-primary);letter-spacing:3px">CO-PILOT</span>
+        <span class="lvl-3" style="letter-spacing:2px;margin-left:4px">GENERATIVE INTELLIGENCE v1.0</span>
+      </div>
+      <button class="tech-btn" onclick="closeCoPilot()" style="padding:4px 10px;font-size:0.55rem">× CLOSE</button>
+    </div>
+
+    <!-- CONFIG FORM -->
+    <div class="cpw-body" id="cpw-config">
+
+      <!-- SET_DURATION -->
+      <div class="cpw-field">
+        <span class="cpw-label">SET_DURATION</span>
+        <div class="cpw-input-row">
+          <div class="cpw-input-wrap">
+            <span class="cpw-input-sublabel">MINUTES</span>
+            <input class="cpw-input" id="cpw-dur" type="number" min="30" max="360" value="90" placeholder="90">
+          </div>
+        </div>
+      </div>
+
+      <!-- ENERGY_CURVE_TYPE -->
+      <div class="cpw-field">
+        <span class="cpw-label">ENERGY_CURVE_TYPE</span>
+        <div class="cpw-curve-grid" id="cpw-curve-grid">
+          <button class="cpw-curve-btn active" data-curve="LINEAR" onclick="cpSetCurve(this,'LINEAR')">
+            <svg class="cpw-curve-preview" viewBox="0 0 80 24"><polyline points="0,20 80,4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            LINEAR
+          </button>
+          <button class="cpw-curve-btn" data-curve="SINUSOIDAL" onclick="cpSetCurve(this,'SINUSOIDAL')">
+            <svg class="cpw-curve-preview" viewBox="0 0 80 24"><path d="M0,12 C10,2 20,2 30,12 C40,22 50,22 60,12 C70,2 80,2 80,12" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            SINUSOIDAL
+          </button>
+          <button class="cpw-curve-btn" data-curve="STOCHASTIC" onclick="cpSetCurve(this,'STOCHASTIC')">
+            <svg class="cpw-curve-preview" viewBox="0 0 80 24"><polyline points="0,18 12,6 22,16 34,8 46,14 58,4 68,12 80,8" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            STOCHASTIC
+          </button>
+          <button class="cpw-curve-btn" data-curve="PEAK" onclick="cpSetCurve(this,'PEAK')">
+            <svg class="cpw-curve-preview" viewBox="0 0 80 24"><polyline points="0,20 30,18 45,2 60,18 80,20" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            PEAK
+          </button>
+        </div>
+      </div>
+
+      <!-- BPM_BOUNDARIES -->
+      <div class="cpw-field">
+        <span class="cpw-label">BPM_BOUNDARIES</span>
+        <div class="cpw-input-row">
+          <div class="cpw-input-wrap">
+            <span class="cpw-input-sublabel">MIN BPM</span>
+            <input class="cpw-input" id="cpw-bpm-min" type="number" min="60" max="200" value="118" placeholder="118">
+          </div>
+          <div class="cpw-input-wrap">
+            <span class="cpw-input-sublabel">MAX BPM</span>
+            <input class="cpw-input" id="cpw-bpm-max" type="number" min="60" max="200" value="136" placeholder="136">
+          </div>
+        </div>
+      </div>
+
+      <!-- GENRE_BIAS -->
+      <div class="cpw-field">
+        <span class="cpw-label">GENRE_BIAS</span>
+        <input class="cpw-slider" id="cpw-genre-bias" type="range" min="0" max="100" value="50">
+        <div class="cpw-slider-labels">
+          <span>MINIMAL / DEEP</span>
+          <span>PEAK HOUR / HARD</span>
+        </div>
+      </div>
+
+    </div><!-- /cpw-config -->
+
+    <!-- PROCESSING STATE (hidden until execution) -->
+    <div class="cpw-processing" id="cpw-processing">
+      <div class="cpw-proc-header">
+        <div class="cpw-proc-dot"></div>
+        <span class="lvl-3" style="letter-spacing:2px;color:var(--signal-warning)" id="cpw-proc-label">EXECUTING GENERATION...</span>
+      </div>
+      <div class="cpw-proc-progress"><div class="cpw-proc-fill" id="cpw-proc-fill"></div></div>
+      <div class="cpw-proc-log" id="cpw-proc-log">
+        <span class="terminal-cursor"></span>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="cpw-footer" style="flex-shrink:0;">
+      <span class="cpw-footer-info" id="cpw-footer-info" style="font-family:var(--font-mono)">READY — CONFIGURE PARAMETERS</span>
+      <button class="tech-btn cpw-execute" onclick="cpExecuteGeneration()" style="box-shadow:var(--shadow-raised)">[EXECUTE GENERATION]</button>
+    </div>
+  </div> <!-- /co-pilot-wizard -->
+
+
+</div> <!-- /zone-right -->
+</div> <!-- /shell -->
+
+<!-- STATUS FOOTER — fixed, non-blocking, full width -->
+<div id="status-footer" style="
+  position:fixed; bottom:0; left:0; right:0;
+  height:28px; z-index:10;
+  display:flex; align-items:center; gap:20px;
+  padding:0 20px;
+  background:var(--color-bg-inset);
+  border-top:1px solid var(--border-color);
+  pointer-events:none;
+  font-family:var(--font-mono); font-size:9px;
+  letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--text-secondary);
+">
+  <span>SETFLOW // SYSTEM_STABLE</span>
+  <span style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+    LIC_WARN:&nbsp;<span id="s4" style="color:var(--color-accent-vu-red); font-weight:600">0</span>
+    &nbsp;//&nbsp;
+    <span id="s4-warn" style="color:var(--text-secondary)">UNLICENSED</span>
+  </span>
+</div>
+
+<!-- MOBILE COMMAND DRAWER (Task 06) -->
+<div class="mobile-cmd-drawer" id="mobile-cmd-drawer">
+  <button class="mcd-btn mcd-primary" onclick="document.getElementById('fi').click()">
+    <span>⊕</span> IMPORT
+  </button>
+  <button class="mcd-btn" onclick="openIE(sel)" id="mcd-analyze">
+    <span>⬡</span> ANALYZE
+  </button>
+  <button class="mcd-btn mcd-bridge" onclick="goView('hybrid',null)">
+    <span>⇌</span> BRIDGE
+  </button>
+</div>
+
+<!-- DETAIL PANEL — fixed overlay -->
+<aside class="pnl" id="pnl">
+  <div class="pi" id="pi"></div>
+</aside>
+
+<!-- EXPORT MODAL -->
+<div class="mb" id="emod">
+  <div class="md">
+    <h2>Rekordbox Export</h2>
+    <p>Import in Rekordbox:<br><span style="font-family:var(--M);font-size:10px;color:var(--ink)">Preferences → Advanced → Database → Import</span></p>
+    <div class="mdc" id="eprev"></div>
+    <div class="mdf">
+      <button class="btn b-out" onclick="closeExp()">Cancel</button>
+      <button class="btn b-red" onclick="dlExp()">Download XML</button>
+    </div>
+  </div>
+</div>
+
+<!-- LICENSE CHECK MODAL -->
+<div class="mb" id="licmod">
+  <div class="md">
+    <h2>⚠ Lizenz-Prüfung</h2>
+    <p>Diese Tracks haben keine gültige Lizenz für den Club-Einsatz in Deutschland. Bitte vor dem Auftritt klären.</p>
+    <div class="lic-modal-body" id="lic-modal-body"></div>
+    <div class="mdf">
+      <button class="btn b-out" onclick="document.getElementById('licmod').classList.remove('open')">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD VINYL MODAL -->
+<div class="mb" id="vmodal">
+  <div class="md">
+    <h2>Add Vinyl Record</h2>
+    <div id="scanner-container" style="display:none"></div>
+    <div class="sl2">Search / Scan</div>
+    <div style="display:flex;gap:5px;margin-bottom:10px">
+      <input type="text" id="v-search" class="auth-field" placeholder="Catalog # or Title..." style="margin-bottom:0">
+      <button class="btn b-out" onclick="fetchDiscogs()" style="padding:0 10px">Search</button>
+      <button class="btn b-ink" onclick="startScanner()" style="padding:0 10px">📷</button>
+    </div>
+    <div class="sl2">Details</div>
+    <input type="text" id="v-title" class="auth-field" placeholder="Title">
+    <input type="text" id="v-artist" class="auth-field" placeholder="Artist">
+    <input type="text" id="v-label" class="auth-field" placeholder="Label">
+    <input type="text" id="v-year" class="auth-field" placeholder="Year">
+    <div class="sl2">Link to Digital Track</div>
+    <select id="v-link" class="auth-field" style="height:30px;padding:0 5px">
+      <option value="">-- No Digital Track --</option>
+    </select>
+    <div class="mdf" style="margin-top:15px">
+      <button class="btn b-out" onclick="closeVModal()">Cancel</button>
+      <button class="btn b-grn" onclick="saveVinyl()">Save Record</button>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sb-overlay" id="sb-overlay" onclick="closeSb()"></div>
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <div class="bnav-inner">
+    <button class="bn on" id="bn-tracks" onclick="bnav('library',this)"><span class="bn-icon"></span>Tracks</button>
+    <button class="bn" id="bn-sets" onclick="bnav('set',this)"><span class="bn-icon"></span>Sets</button>
+    <button class="bn" id="bn-export" onclick="openExp()"><span class="bn-icon"></span>Export</button>
+  </div>
+</nav>
+
+<!-- AUTH MODAL -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-box">
+    <h2 id="auth-title">Login</h2>
+    <div class="wm-sub">DJ Music Organizer</div>
+    <div id="auth-name-wrap" style="display:none">
+      <input class="auth-field" id="auth-name" type="text" placeholder="DJ Name" autocomplete="name">
+    </div>
+    <input class="auth-field" id="auth-email" type="email" placeholder="Email" autocomplete="email">
+    <input class="auth-field" id="auth-pass" type="password" placeholder="Password" autocomplete="current-password">
+    <div class="auth-err" id="auth-err"></div>
+    <button class="btn b-ink" id="auth-submit" onclick="authSubmit()" style="width:100%;justify-content:center;padding:8px">Login</button>
+    <div class="auth-switch" id="auth-switch">
+      Noch kein Account? <a onclick="authToggleMode()">Registrieren</a>
+    </div>
+  </div>
+</div>
+
+<!-- INTELLIGENCE ENGINE OVERLAY -->
+<div class="ie-overlay" id="ie-overlay">
+  <div class="module-container intelligence-engine">
+
+    <!-- HEADER -->
+    <div class="ie-header">
+      <div class="ie-status">
+        <div class="ie-status-dot" id="ie-dot"></div>
+        <span class="lvl-1" style="color:var(--signal-primary);letter-spacing:3px">SIGNAL ANALYSIS</span>
+      </div>
+      <span class="lvl-3" style="letter-spacing:2px">INTELLIGENCE ENGINE v1.0</span>
+    </div>
+
+    <!-- SCAN STATE -->
+    <div id="ie-scan-state">
+      <!-- PANE A: OSCILLOSCOPE -->
+      <div class="signal-visualizer">
+        <span class="osc-label">CH.1 — AUDIO SIGNAL</span>
+        <span class="osc-ch2-label">44.1 kHz / 24-bit</span>
+        <div class="osc-track">
+          <!-- Real-time PCM waveform — driven by AudioEngine.startOscilloscope() -->
+          <svg id="ie-osc-live" viewBox="0 0 800 80" preserveAspectRatio="none">
+            <line class="osc-center-line" x1="0" y1="40" x2="800" y2="40"/>
+            <path class="osc-live-ghost" id="ie-osc-ghost" d="M0,40 L800,40"/>
+            <path class="osc-live-path"  id="ie-osc-path"  d="M0,40 L800,40"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- PANE B: DATA TERMINAL -->
+      <div class="data-terminal">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span style="background:var(--signal-alert)"></span>
+            <span style="background:var(--signal-warning)"></span>
+            <span style="background:var(--signal-primary)"></span>
+          </div>
+          <span class="lvl-3" style="letter-spacing:2px">SETFLOW_OS — ANALYSIS LOG</span>
+        </div>
+        <div class="terminal-log" id="terminal-log">
+          <span class="terminal-cursor"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS STATE (hidden initially) -->
+    <div id="ie-result-state" style="display:none">
+      <div class="metadata-grid">
+        <div class="meta-row">
+          <span class="meta-label">TEMPO</span>
+          <span class="meta-value signal" id="ie-bpm">—</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">TONALITY</span>
+          <span class="meta-value" id="ie-key">—</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">SONIC PROFILE</span>
+          <span class="meta-value" id="ie-genre">—</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">ENERGY LEVEL</span>
+          <div class="meta-energy-wrap">
+            <div class="meta-bar"><div class="meta-bar-fill" id="ie-energy-bar"></div></div>
+            <span class="meta-energy-num" id="ie-energy-val">—</span>
+          </div>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">DETECTED ERA</span>
+          <span class="meta-value" id="ie-era">—</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">LICENSE STATUS</span>
+          <span class="meta-value" id="ie-lic">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="ie-footer">
+      <span class="ie-status-label" id="ie-status-label">SCANNING...</span>
+      <div class="ie-footer-spacer"></div>
+      <button class="tech-btn" onclick="ieRescan()">↺ RE-SCAN</button>
+      <button class="tech-btn danger" onclick="closeIE()">✕ CLOSE</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><div class="tled" id="tled"></div><span id="tmsg"></span></div>
+
+
+
+<!-- C.2 Session Import: hidden file picker -->
+<input type="file" id="session-import-input" accept=".json" style="display:none"
+  onchange="SessionManager._onFileSelect(this)">
+<!-- C.3 Ghost Link: hidden audio file picker -->
+<input type="file" id="ghost-link-input" accept=".mp3,.wav,.aiff,.aif,.flac,.m4a" style="display:none"
+  onchange="HydrationManager._onPick(this)">
+<!-- NEURAL MATCH TOOLTIP (Task 07) -->
+<div id="nm-tooltip">
+  <div class="nm-tooltip-header">NEURAL MATCH ANALYSIS</div>
+  <div class="nm-tooltip-row">
+    <span class="lvl-3">BPM DELTA</span>
+    <span class="nm-val" id="nm-bpm-delta">—</span>
+  </div>
+  <div class="nm-tooltip-row">
+    <span class="lvl-3">KEY COMPAT</span>
+    <span class="nm-val" id="nm-key-compat">—</span>
+  </div>
+  <div class="nm-tooltip-row">
+    <span class="lvl-3">ENERGY DELTA</span>
+    <span class="nm-val" id="nm-energy-delta">—</span>
+  </div>
+  <div class="nm-tooltip-row" style="margin-top:6px">
+    <span class="lvl-3">MATCH SCORE</span>
+    <span class="nm-val nm-good" id="nm-score">—</span>
+  </div>
+  <div class="nm-match-bar"><div class="nm-match-fill" id="nm-fill" style="width:0%"></div></div>
+</div>
+
+<!-- CDN dependencies (loaded before module to establish globals) -->
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- SETFLOW JS — ES Module Orchestrator -->
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

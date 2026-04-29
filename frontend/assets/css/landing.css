@@ -1,0 +1,184 @@
+/* ═══ SETFLOW — LANDING ═══ */
+
+/* ══════════════════════════════════════════════════════════════
+   LANDING SCREEN — "The Heart" (Phase 1)
+   Full-viewport, fixed overlay, visible until first track loads
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── LAYER 0: Signal Flow Background ── */
+#lp-screen {
+  position: fixed; inset: 0; z-index: 200;
+  background: var(--color-bg-main);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow: hidden;
+}
+
+/* Landing Screen — Asset-Based Three-Panel Background */
+.lp-bg {
+  position: absolute; inset: 0;
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  pointer-events: none;
+}
+.lp-bg-panel {
+  position: relative; overflow: hidden;
+}
+.lp-bg-panel img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: grayscale(0.5) brightness(0.18) contrast(1.2);
+}
+/* Gradient bleed masks between panels */
+.lp-bg-panel:nth-child(1)::after,
+.lp-bg-panel:nth-child(2)::after {
+  content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 140px;
+  background: linear-gradient(to right, transparent, var(--color-bg-main));
+  z-index: 1;
+}
+/* Signal pulse — living electrical animation */
+@keyframes signal-flow {
+  0%   { opacity: 0.5; }
+  50%  { opacity: 1.0; }
+  100% { opacity: 0.5; }
+}
+.lp-bg { animation: signal-flow 6s ease-in-out infinite; }
+
+/* ── LAYER 1: Header ── */
+.lp-header {
+  position: relative; z-index: 2;
+  text-align: center; margin-bottom: 48px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.lp-title-row {
+  position: relative; display: inline-block;
+}
+.lp-title {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 800;
+  letter-spacing: 0.35em;
+  color: var(--color-accent-cream);
+  text-transform: uppercase;
+  line-height: 1;
+  user-select: none;
+}
+/* LED dot — superscript above the W */
+.lp-led {
+  position: absolute;
+  top: 4px; right: -14px;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--color-accent-vu-red);
+  transition: background 0.12s ease;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.4);
+}
+/* GREEN state on drag-active */
+#lp-screen.drag-active .lp-led { background: #4caf50; }
+.lp-subtitle {
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 1.2vw, 13px);
+  letter-spacing: 0.3em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+/* Thin rule under subtitle */
+.lp-rule {
+  width: 120px; height: 1px;
+  background: var(--border-color);
+  margin-top: 4px;
+}
+
+/* ── LAYER 2: Inset Drop Panel ── */
+.lp-dropzone {
+  position: relative; z-index: 2;
+  width: min(520px, 88vw);
+  padding: 48px 40px;
+  background: var(--color-bg-inset);
+  border: 1px solid var(--border-color);
+  box-shadow: inset 2px 2px 10px rgba(0,0,0,0.7),
+              inset -1px -1px 4px rgba(255,255,255,0.02),
+              var(--shadow-raised);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  /* Screw corners — SSL-rack detail */
+}
+.lp-dropzone::before,
+.lp-dropzone::after {
+  content: '✕';
+  position: absolute;
+  font-size: 7px;
+  color: var(--border-color);
+  line-height: 1;
+  pointer-events: none;
+}
+.lp-dropzone::before { top: 6px; left: 8px; }
+.lp-dropzone::after  { bottom: 6px; right: 8px; }
+/* Amber glow on hover & drag */
+.lp-dropzone:hover,
+#lp-screen.drag-active .lp-dropzone {
+  border-color: var(--color-accent-amber);
+  box-shadow: inset 2px 2px 10px rgba(0,0,0,0.7),
+              inset -1px -1px 4px rgba(255,255,255,0.02),
+              0 0 0 1px var(--color-accent-amber),
+              0 0 20px rgba(255,179,0,0.08);
+}
+
+.lp-drop-icon { margin-bottom: 20px; opacity: 0.35; }
+.lp-drop-title {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--color-accent-cream);
+  margin-bottom: 16px;
+}
+.lp-drop-formats {
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 0.2em;
+  color: var(--text-secondary);
+  line-height: 2.2;
+  text-transform: uppercase;
+}
+.lp-drop-formats span { color: var(--color-accent-steel); }
+/* Divider between digital and analog */
+.lp-format-rule {
+  width: 40px; height: 1px;
+  background: var(--border-color);
+  margin: 8px auto;
+}
+.lp-demo-hint {
+  margin-top: 24px;
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 0.2em;
+  color: var(--color-accent-steel);
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 6px 14px;
+  border: 1px solid var(--border-color);
+  display: inline-block;
+  transition: border-color 0.1s, color 0.1s;
+  box-shadow: var(--shadow-raised);
+}
+.lp-demo-hint:hover {
+  border-color: var(--color-accent-amber);
+  color: var(--color-accent-amber);
+}
+
+/* System ref label at bottom */
+.lp-sysref {
+  position: absolute; bottom: 20px;
+  font-family: var(--font-mono); font-size: 8px;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(255,255,255,0.12);
+  pointer-events: none; user-select: none;
+}
+
+/* ── GRAIN OVERLAY (Global Texture) ── */
+.grain-overlay {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 997;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
