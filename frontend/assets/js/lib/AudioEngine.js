@@ -264,4 +264,5 @@ class AudioEngine {
   }
 }
 
-export default AudioEngine;
+const audioEngine = new AudioEngine();
+export { audioEngine };

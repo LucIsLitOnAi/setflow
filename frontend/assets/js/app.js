@@ -1,7 +1,7 @@
 import { SETFLOW_STATE, getState } from './lib/State.js';
 import * as UI from './lib/UIController.js';
 import * as Session from './lib/SessionManager.js';
-import * as socketClient from './socket-client.js';
+import socketClient from './socket-client.js';
 import * as Vinyl from './vinyl-engine.js';
 import { audioEngine } from './lib/AudioEngine.js';
 
@@ -284,7 +284,14 @@ async function upgradeToPro() {
 }
 
 window.renderTrackPanel = renderTrackPanel;
-window.show = UI.show;
+window.show = () => {
+  const roomIdEl = document.getElementById('room-id');
+  const roomId = roomIdEl ? roomIdEl.value : 'demo';
+  socketClient.joinRoom(roomId, socketClient.djName);
+  UI.show();
+  UI.ren();
+  UI.sts();
+};
 window.ren = UI.ren;
 window.sts = UI.sts;
 

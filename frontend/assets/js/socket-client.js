@@ -14,14 +14,22 @@ class SocketClient {
     this.socket.on('connect', () => {
       console.log('Connected to server');
       this.joinRoom(this.roomId, this.djName);
-      document.getElementById('conn-dot').className = 'conn-dot online';
-      document.getElementById('conn-label').textContent = 'ONLINE';
+      const el = document.getElementById('connection-status');
+      if (el) {
+        el.textContent = 'ONLINE';
+        el.style.background = 'var(--signal-primary)';
+        el.style.color = 'var(--paper1)';
+      }
     });
 
     this.socket.on('disconnect', () => {
       console.log('Disconnected from server');
-      document.getElementById('conn-dot').className = 'conn-dot offline';
-      document.getElementById('conn-label').textContent = 'OFFLINE';
+      const el = document.getElementById('connection-status');
+      if (el) {
+        el.textContent = 'OFFLINE';
+        el.style.background = '';
+        el.style.color = '';
+      }
     });
 
     this.socket.on('init-state', (state) => {

@@ -113,12 +113,18 @@ function sts() {
 }
 
 function show() {
-  // Hide landing screen on first track load
+  // Hide landing screen
   const lp = document.getElementById('lp-screen');
   if (lp) lp.style.display = 'none';
-  document.getElementById('dz').style.display = 'none';
-  document.getElementById('fb').classList.add('vis');
-  document.getElementById('tbl').style.display = 'table';
+  
+  // Show main app
+  const app = document.getElementById('app');
+  if (app) app.style.display = 'flex';
+
+  // Optional elements with safety checks
+  const dz = document.getElementById('dz'); if (dz) dz.style.display = 'none';
+  const fb = document.getElementById('fb'); if (fb) fb.classList.add('vis');
+  const tbl = document.getElementById('tbl'); if (tbl) tbl.style.display = 'table';
 }
 
 function goView(v, el) {

@@ -1,0 +1,107 @@
+/* ═══ SETFLOW V2 — DTP-V3 CORE ═══ */
+
+:root {
+  /* COLORS: The Vault Palette */
+  --bg-main: #0f0f0f;
+  --bg-panel: #1a1a1a;
+  --bg-inset: #0a0a0a;
+  
+  --accent-amber: #ffb300;
+  --accent-green: #8fba5a;
+  --accent-red:   #d32f2f;
+  --accent-steel: #4a4a4a;
+  
+  --text-main:  #e0ddd5;
+  --text-dim:   #7a7a7a;
+  
+  --border-ui:  1px solid #2a2a2a;
+  --radius-ui:  4px;
+  
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Inter', 'Helvetica Neue', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+}
+
+/* ── LAYOUT ── */
+.app-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr 340px;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Sidebar: Navigation & Identity */
+.sidebar {
+  background: var(--bg-inset);
+  border-right: var(--border-ui);
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 4px;
+  font-size: 18px;
+  margin-bottom: 40px;
+}
+
+.brand span { color: var(--accent-amber); font-size: 10px; vertical-align: super; }
+
+/* Main Content: The Library */
+.main-stage {
+  background: var(--bg-main);
+  overflow-y: auto;
+  padding: 40px;
+}
+
+/* Detail Panel: The Vault Info */
+.vault-panel {
+  background: var(--bg-panel);
+  border-left: var(--border-ui);
+  padding: 20px;
+  box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+}
+
+/* ── COMPONENTS ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.media-card {
+  background: var(--bg-panel);
+  border: var(--border-ui);
+  border-radius: var(--radius-ui);
+  padding: 20px;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  position: relative;
+}
+
+.media-card:hover {
+  border-color: var(--accent-amber);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.status-led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  display: inline-block;
+  margin-right: 8px;
+  box-shadow: 0 0 8px var(--accent-green);
+}
