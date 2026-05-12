@@ -5,6 +5,16 @@
  */
 import AudioEngine from './lib/AudioEngine.js';
 
+function esc(str){
+  if(!str)return'';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
+}
+
 // ── MODULE-LEVEL STATE ──
 let tracks=[], vinylRecords=[], sel=null, fil='all', q='';
 
@@ -34,7 +44,7 @@ function vSVG(t,sz=38){
     <circle cx="${r}" cy="${r}" r="${r-.5}" fill="${c.bg}"/>
     ${[.85,.78,.71,.64,.57,.50].map(f=>`<circle cx="${r}" cy="${r}" r="${(r-.5)*f}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>`).join('')}
     <circle cx="${r}" cy="${r}" r="${r*.42}" fill="${c.label}"/>
-    <text x="${r}" y="${r+.5}" text-anchor="middle" dominant-baseline="middle" fill="${c.text}" font-family="IBM Plex Mono,monospace" font-size="${sz*.18}" font-weight="600">${ini}</text>
+    <text x="${r}" y="${r+.5}" text-anchor="middle" dominant-baseline="middle" fill="${c.text}" font-family="IBM Plex Mono,monospace" font-size="${sz*.18}" font-weight="600">${esc(ini)}</text>
     <circle cx="${r}" cy="${r}" r="${r*.07}" fill="${c.bg}"/>
     <circle cx="${r}" cy="${r}" r="${r-.5}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
   </svg>`;
@@ -46,9 +56,9 @@ function vSVGLg(t,sz=220){
     ${[.92,.86,.80,.74,.68,.62,.56,.50].map(f=>`<circle cx="${r}" cy="${r}" r="${(r-1)*f}" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.8"/>`).join('')}
     <circle cx="${r}" cy="${r}" r="${r*.38}" fill="${c.label}"/>
     <circle cx="${r}" cy="${r}" r="${r*.38}" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width=".8"/>
-    <text x="${r}" y="${r-10}" text-anchor="middle" dominant-baseline="middle" fill="${c.text}" font-family="IBM Plex Mono,monospace" font-size="${sz*.065}" font-weight="600">${(t.title||'').slice(0,14)}</text>
-    <text x="${r}" y="${r+7}" text-anchor="middle" dominant-baseline="middle" fill="${c.text}" font-family="IBM Plex Sans,sans-serif" font-size="${sz*.048}" opacity=".7">${(t.artist||'').slice(0,16)}</text>
-    <text x="${r}" y="${r+21}" text-anchor="middle" dominant-baseline="middle" fill="${c.text}" font-family="IBM Plex Mono,monospace" font-size="${sz*.042}" opacity=".5">${t.bpm||'—'} BPM</text>
+    <text x="${r}" y="${r-10}" text-anchor="middle" dominant-baseline="middle" fill="${c.text}" font-family="IBM Plex Mono,monospace" font-size="${sz*.065}" font-weight="600">${esc((t.title||'').slice(0,14))}</text>
+    <text x="${r}" y="${r+7}" text-anchor="middle" dominant-baseline="middle" fill="${c.text}" font-family="IBM Plex Sans,sans-serif" font-size="${sz*.048}" opacity=".7">${esc((t.artist||'').slice(0,16))}</text>
+    <text x="${r}" y="${r+21}" text-anchor="middle" dominant-baseline="middle" fill="${c.text}" font-family="IBM Plex Mono,monospace" font-size="${sz*.042}" opacity=".5">${esc(t.bpm||'—')} BPM</text>
     <circle cx="${r}" cy="${r}" r="${r*.055}" fill="${c.bg}"/>
     <circle cx="${r}" cy="${r}" r="${r-1}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
   </svg>`;
@@ -726,7 +736,7 @@ function cr(r){
 function genreChips(genres){
   if(!genres||!genres.length)return'<span style="color:var(--accent-dim);font-size:10px;letter-spacing:1px">—</span>';
   return genres.map((g,i)=>
-    `<span class="tag-pill${i===0?' tag-primary':''}"><span class="tag-pill-dot"></span>${g}</span>`
+    `<span class="tag-pill${i===0?' tag-primary':''}"><span class="tag-pill-dot"></span>${esc(g)}</span>`
   ).join('');
 }
 
@@ -753,8 +763,8 @@ function ren(){
       <td class="td-num tno">${String(i+1).padStart(2,'0')}</td>
       <td class="td-cover">${coverCell(t)}</td>
       <td>
-        <div class="tn" style="display:flex;align-items:center;gap:4px">${t.title}${t.isGhost?`<span class="ghost-badge" title="Click to link real file — or drag & drop audio onto this row" onclick="event.stopPropagation();HydrationManager._promptFile(${t.id})">⇡ GHOST</span>`:''}${t.isOwn?` <span style="font-size:9px;color:var(--green);font-family:var(--M);letter-spacing:1px">★ EIGEN</span>`:''}${sel?.id===t.id?`<span class="neural-match-node" onclick="event.stopPropagation();nmShow(event,${t.id})" title="NEURAL MATCH"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="2" fill="var(--signal-primary)"/><circle cx="2" cy="3" r="1.2" fill="var(--signal-primary)" opacity=".7"/><circle cx="12" cy="3" r="1.2" fill="var(--signal-primary)" opacity=".7"/><circle cx="2" cy="11" r="1.2" fill="var(--signal-primary)" opacity=".7"/><circle cx="12" cy="11" r="1.2" fill="var(--signal-primary)" opacity=".7"/><line x1="7" y1="5" x2="2.8" y2="3.8" stroke="var(--signal-primary)" stroke-width=".8" opacity=".5"/><line x1="7" y1="5" x2="11.2" y2="3.8" stroke="var(--signal-primary)" stroke-width=".8" opacity=".5"/><line x1="7" y1="9" x2="2.8" y2="10.2" stroke="var(--signal-primary)" stroke-width=".8" opacity=".5"/><line x1="7" y1="9" x2="11.2" y2="10.2" stroke="var(--signal-primary)" stroke-width=".8" opacity=".5"/></svg></span>`:''}</div>
-        <div class="ta">${t.artist}</div>
+        <div class="tn" style="display:flex;align-items:center;gap:4px">${esc(t.title)}${t.isGhost?`<span class="ghost-badge" title="Click to link real file — or drag & drop audio onto this row" onclick="event.stopPropagation();HydrationManager._promptFile(${t.id})">⇡ GHOST</span>`:''}${t.isOwn?` <span style="font-size:9px;color:var(--green);font-family:var(--M);letter-spacing:1px">★ EIGEN</span>`:''}${sel?.id===t.id?`<span class="neural-match-node" onclick="event.stopPropagation();nmShow(event,${t.id})" title="NEURAL MATCH"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="2" fill="var(--signal-primary)"/><circle cx="2" cy="3" r="1.2" fill="var(--signal-primary)" opacity=".7"/><circle cx="12" cy="3" r="1.2" fill="var(--signal-primary)" opacity=".7"/><circle cx="2" cy="11" r="1.2" fill="var(--signal-primary)" opacity=".7"/><circle cx="12" cy="11" r="1.2" fill="var(--signal-primary)" opacity=".7"/><line x1="7" y1="5" x2="2.8" y2="3.8" stroke="var(--signal-primary)" stroke-width=".8" opacity=".5"/><line x1="7" y1="5" x2="11.2" y2="3.8" stroke="var(--signal-primary)" stroke-width=".8" opacity=".5"/><line x1="7" y1="9" x2="2.8" y2="10.2" stroke="var(--signal-primary)" stroke-width=".8" opacity=".5"/><line x1="7" y1="9" x2="11.2" y2="10.2" stroke="var(--signal-primary)" stroke-width=".8" opacity=".5"/></svg></span>`:''}</div>
+        <div class="ta">${esc(t.artist)}</div>
       </td>
       <td>${genreChips(t.genres)}</td>
       <td class="tbpm ${bc(t.bpm)}">${t.bpm||'—'}</td>
@@ -1463,7 +1473,7 @@ function initIcons(){
 load();sts();buildSet();authUpdateUI();initIcons();
 if(authToken) connectSocket();
 function checkLicenses(){const warn=tracks.filter(t=>t.lic==='none'||t.lic==='unknown');if(!warn.length){toast('All licensed ✓','grn');return;}const html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px"><div style="background:var(--paper2);padding:12px;border-left:4px solid var(--green)"><div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3)">Compliant</div><div style="font-size:24px;font-weight:600;color:var(--green)">'+tracks.filter(t=>t.lic!=='none'&&t.lic!=='unknown').length+'</div></div></div>';document.getElementById('lic-modal-body').innerHTML=html;if(!document.getElementById('licmod')){const m=document.createElement('div');m.id='licmod';m.className='modal';m.innerHTML='<div class="modal-content" style="max-width:380px"><button style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:20px;cursor:pointer" onclick="closeCheckLic()">×</button><div style="font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:16px">License Status</div><div id="lic-modal-body"></div></div>';document.body.appendChild(m);}document.getElementById('licmod').classList.add('open');}
-function openGigPlanner(id,role){sel=tracks.find(x=>x.id===id);if(!sel)return;if(!document.getElementById('gig-modal')){const m=document.createElement('div');m.id='gig-modal';m.className='modal';m.innerHTML='<div class="modal-content" style="max-width:380px;position:relative"><div id="gig-modal-body"></div></div>';document.body.appendChild(m);}const html='<button style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:20px;cursor:pointer" onclick="closeGigPlanner()">×</button><div style="font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:12px">'+sel.title+' — '+role+'</div><div style="margin-bottom:10px"><input type="date" id="gig-date" style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="margin-bottom:10px"><input type="text" id="gig-venue" placeholder="Venue..." style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="margin-bottom:10px"><input type="time" id="gig-time" style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="display:flex;gap:8px"><button class="btn b-out" style="flex:1" onclick="closeGigPlanner()">Cancel</button><button class="btn b-grn" style="flex:1" onclick="saveGigPlan()">Save</button></div>';document.getElementById('gig-modal-body').innerHTML=html;document.getElementById('gig-modal').classList.add('open');}
+function openGigPlanner(id,role){sel=tracks.find(x=>x.id===id);if(!sel)return;if(!document.getElementById('gig-modal')){const m=document.createElement('div');m.id='gig-modal';m.className='modal';m.innerHTML='<div class="modal-content" style="max-width:380px;position:relative"><div id="gig-modal-body"></div></div>';document.body.appendChild(m);}const html='<button style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:20px;cursor:pointer" onclick="closeGigPlanner()">×</button><div style="font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:12px">'+esc(sel.title)+' — '+esc(role)+'</div><div style="margin-bottom:10px"><input type="date" id="gig-date" style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="margin-bottom:10px"><input type="text" id="gig-venue" placeholder="Venue..." style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="margin-bottom:10px"><input type="time" id="gig-time" style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="display:flex;gap:8px"><button class="btn b-out" style="flex:1" onclick="closeGigPlanner()">Cancel</button><button class="btn b-grn" style="flex:1" onclick="saveGigPlan()">Save</button></div>';document.getElementById('gig-modal-body').innerHTML=html;document.getElementById('gig-modal').classList.add('open');}
 function closeGigPlanner(){const m=document.getElementById('gig-modal');if(m)m.classList.remove('open');}
 function saveGigPlan(){const d=document.getElementById('gig-date')?.value,v=document.getElementById('gig-venue')?.value;if(sel&&d){sel.gigDate=d;sel.gigVenue=v||'—';save();toast(sel.role+' @ '+(v||'?')+', '+d,'grn');closeGigPlanner();ren();}};
 // ═══ HYBRID BRIDGE — MAPPING STATION ═══
