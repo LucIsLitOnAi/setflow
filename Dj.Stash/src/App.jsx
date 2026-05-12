@@ -1,50 +1,66 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import React from "react";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
-
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
-
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    <>
+      <div className="grain-overlay"></div>
+      <div id="app" className="shell">
+        {/* ── LEFT ZONE: Library & Vinyl ── */}
+        <section className="zone-left">
+          <header className="app-header">
+            <div className="logo-text">SETFLOW <span className="badge">COLLAB</span></div>
+            <div className="top-bar-right">
+              <button id="upgrade-btn" className="btn b-out">UPGRADE</button>
+              <div id="pro-badge" className="status-badge" style={{ display: 'none' }}>PRO</div>
+              <div id="connection-status" className="status-badge">OFFLINE</div>
+            </div>
+          </header>
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+          <div className="tab-header">
+            <button className="tab-btn active">LIBRARY</button>
+            <button className="tab-btn">VINYL COLLECTION</button>
+          </div>
+
+          <div id="library-panel" className="panel-content">
+            <div className="search-bar">
+              <input type="text" id="search-input" placeholder="SEARCH TRACKS..." />
+            </div>
+            <div id="track-list" className="track-list"></div>
+          </div>
+
+          <div id="vinyl-panel" className="panel-content" style={{ display: 'none' }}>
+            <div id="vinyl-grid" className="vinyl-grid"></div>
+          </div>
+        </section>
+
+        {/* ── MID ZONE: Hybrid Bridge Mapper ── */}
+        <section className="zone-mid">
+          <div className="bridge-container">
+            <div className="bridge-header">HYBRID BRIDGE <span className="badge">MAPPER</span></div>
+
+            <div className="bridge-slots">
+              <div id="hb-vinyl-list" className="hb-list"></div>
+              <div className="bridge-arrow">⟷</div>
+              <div id="hb-track-list" className="hb-list"></div>
+            </div>
+
+            <div className="bridge-footer">
+              <div id="hb-idle" className="hb-status">SELECT BOTH SIDES TO LINK</div>
+              <div id="hb-ready" className="hb-status" style={{ display: 'none' }}>
+                <span id="hb-ready-vinyl-label"></span> ⟷ <span id="hb-ready-track-label"></span>
+              </div>
+              <button id="hb-execute-btn" className="btn btn-primary">EXECUTE LINK</button>
+              <div id="hb-exec-label"></div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── RIGHT ZONE: Detail Panel ── */}
+        <section id="pnl" className="zone-right">
+          <div id="pi" className="panel-inner"></div>
+        </section>
       </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+    </>
   );
 }
 
