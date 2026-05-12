@@ -1,0 +1,9 @@
+
+Dj.Stash - 30-Tage Masterplan
+(Regel für die KI: Dieser Plan ist heilig. Arbeite nur an dem Tag, der dir ausdrücklich zugewiesen wurde.)
+Phase 1: Projekt-Setup & Infrastruktur Tag 1: Neues Repository Dj.Stash & Masterplan anlegen. Tag 2: Tauri Init (Rust Backend + React/Vue Frontend). Tag 3: SQLite Einbindung und Verbindungstest. Tag 4: Altes CSS aus dem alten setflow-Projekt importieren. Tag 5: Alte UI-Struktur (HTML/JSX) als statisches Grundgerüst einbauen.
+Phase 2: Datenbank-Architektur Tag 6: Schema für 'Locations'. Tag 7: Schema für 'Tracks' (inkl. Format & Location_ID). Tag 8: Schema für 'Sets' & 'set_tracks'. Tag 9: Frontend <-> Backend Bridge. Tag 10: Puffer- & Test-Tag.
+Phase 3: Externe Daten & API Tag 11: Discogs API Setup (Auth). Tag 12: Barcode-Eingabe UI & JSON Anzeige. Tag 13: Von Discogs zur Datenbank (Speichern als analoger Track). Tag 14: Manueller Upload (Digitaler Track & Dateikopie). Tag 15: Puffer- & Test-Tag.
+Phase 4: Die Bibliothek & das Location-Tracking Tag 16: Library View (Digitale/Analoge Badges). Tag 17: Location Assignment (Backend). Tag 18: Location Assignment (Frontend Dropdown). Tag 19: Location Filter. Tag 20: Puffer- & Test-Tag.
+Phase 5: Der Hybrid-Set-Builder Tag 21: Set Builder UI (Split-View). Tag 22: Drag & Drop Logik (Speichern in SQLite). Tag 23: Die Hybrid-Warnung (Visuelle Auswertung). Tag 24: Set-Verwaltung. Tag 25: Puffer- & Test-Tag.
+Phase 6: Rekordbox-Export & Finish Tag 26: Export-Logik Vorbereitung (Digitale Pfade filtern). Tag 27: M3U-Playlist Generierung. Tag 28: Export UI Button. Tag 29: Bugfixing & Polishing. Tag 30: Das MVP Release.

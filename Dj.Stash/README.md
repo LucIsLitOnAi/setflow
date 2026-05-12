@@ -1,0 +1,1 @@
+# Dj.Stash Ein hybrides Inventory- & Set-Preparation-Tool für professionelle DJs. Verknüpft analoge (Vinyl, Kassetten) und digitale (MP3, AIFF) Bibliotheken mit Location-Tracking und Set-Building-Funktionen.
