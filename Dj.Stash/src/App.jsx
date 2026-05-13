@@ -13,6 +13,7 @@ function App() {
 
   const [selectedSet, setSelectedSet] = useState(null);
   const [activeSetTracks, setActiveSetTracks] = useState([]);
+  const [draggedIndex, setDraggedIndex] = useState(null);
 
   const loadTracks = async () => {
     try {
@@ -135,6 +136,39 @@ function App() {
       setActiveSetTracks(updatedTracks);
     } catch (error) {
       console.error("Error adding track to set:", error);
+    }
+  };
+
+  const handleDragStart = (index) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (index) => {
+    if (draggedIndex === null || draggedIndex === index || !selectedSet) return;
+
+    // Create a new array and move the dragged item
+    const newTracks = [...activeSetTracks];
+    const [draggedItem] = newTracks.splice(draggedIndex, 1);
+    newTracks.splice(index, 0, draggedItem);
+
+    // Update local state instantly for a snappy UI
+    setActiveSetTracks(newTracks);
+    setDraggedIndex(null);
+
+    // Extract ordered track IDs and send to backend
+    const newOrderArray = newTracks.map(t => t.id);
+    try {
+      await invoke("update_set_track_order", {
+        setId: selectedSet.id,
+        trackIds: newOrderArray
+      });
+    } catch (error) {
+      console.error("Error updating track order:", error);
+      // Optional: re-fetch from DB if it fails to revert
     }
   };
 
@@ -365,8 +399,29 @@ function App() {
                       <div style={{ color: 'var(--color-text-muted)', fontSize: '12px', fontStyle: 'italic' }}>No tracks added yet. Click '+' in the library to add tracks.</div>
                     ) : (
                       activeSetTracks.map((track, index) => (
-                        <div key={`${track.id}-${index}`} style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '6px', borderRadius: '4px', border: '1px solid var(--color-border)' }}>
-                          <div style={{ fontSize: '10px', color: 'var(--color-accent-steel)', width: '20px', textAlign: 'center', fontWeight: 'bold' }}>
+                        <div
+                          key={`${track.id}-${index}`}
+                          draggable={true}
+                          onDragStart={() => handleDragStart(index)}
+                          onDragOver={handleDragOver}
+                          onDrop={() => handleDrop(index)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            background: 'rgba(0,0,0,0.3)',
+                            padding: '6px',
+                            borderRadius: '4px',
+                            border: '1px solid var(--color-border)',
+                            transition: 'border 0.2s',
+                          }}
+                          onDragEnter={(e) => e.currentTarget.style.border = '1px dashed var(--color-accent-steel)'}
+                          onDragLeave={(e) => e.currentTarget.style.border = '1px solid var(--color-border)'}
+                          onDropCapture={(e) => e.currentTarget.style.border = '1px solid var(--color-border)'}
+                        >
+                          <div style={{ cursor: 'grab', color: 'var(--color-text-muted)', padding: '0 8px', fontSize: '14px', userSelect: 'none' }}>
+                            ≡
+                          </div>
+                          <div style={{ fontSize: '10px', color: 'var(--color-accent-steel)', width: '20px', textAlign: 'center', fontWeight: 'bold', marginRight: '6px' }}>
                             {index + 1}.
                           </div>
                           {track.cover_url ? (
