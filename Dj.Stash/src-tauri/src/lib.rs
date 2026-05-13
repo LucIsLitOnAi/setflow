@@ -62,6 +62,7 @@ struct Track {
     format: String,
     location_id: Option<i32>,
     cover_url: Option<String>,
+    file_path: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -79,6 +80,7 @@ struct TrackInSet {
     location_id: Option<i32>,
     order_index: Option<i32>,
     cover_url: Option<String>,
+    file_path: Option<String>,
 }
 
 #[tauri::command]
@@ -131,7 +133,7 @@ async fn get_locations(app: tauri::AppHandle) -> Result<Vec<Location>, String> {
 }
 
 #[tauri::command]
-async fn add_track(app: tauri::AppHandle, title: String, artist: String, format: String, location_id: Option<i32>, cover_url: Option<String>) -> Result<String, String> {
+async fn add_track(app: tauri::AppHandle, title: String, artist: String, format: String, location_id: Option<i32>, cover_url: Option<String>, file_path: Option<String>) -> Result<String, String> {
     let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let db_path = app_dir.join("database.sqlite");
 
@@ -141,12 +143,13 @@ async fn add_track(app: tauri::AppHandle, title: String, artist: String, format:
         .await
         .map_err(|e| format!("Failed to connect to db: {}", e))?;
 
-    sqlx::query("INSERT INTO tracks (title, artist, format, location_id, cover_url) VALUES (?, ?, ?, ?, ?)")
+    sqlx::query("INSERT INTO tracks (title, artist, format, location_id, cover_url, file_path) VALUES (?, ?, ?, ?, ?, ?)")
         .bind(title)
         .bind(artist)
         .bind(format)
         .bind(location_id)
         .bind(cover_url)
+        .bind(file_path)
         .execute(&pool)
         .await
         .map_err(|e| format!("Failed to insert track: {}", e))?;
@@ -165,7 +168,7 @@ async fn get_tracks(app: tauri::AppHandle) -> Result<Vec<Track>, String> {
         .await
         .map_err(|e| format!("Failed to connect to db: {}", e))?;
 
-    let rows = sqlx::query("SELECT id, title, artist, format, location_id, cover_url FROM tracks")
+    let rows = sqlx::query("SELECT id, title, artist, format, location_id, cover_url, file_path FROM tracks")
         .fetch_all(&pool)
         .await
         .map_err(|e| format!("Failed to fetch tracks: {}", e))?;
@@ -179,6 +182,7 @@ async fn get_tracks(app: tauri::AppHandle) -> Result<Vec<Track>, String> {
             format: row.get("format"),
             location_id: row.get("location_id"),
             cover_url: row.get("cover_url"),
+            file_path: row.get("file_path"),
         });
     }
 
@@ -413,7 +417,7 @@ async fn get_tracks_in_set(app: tauri::AppHandle, set_id: i32) -> Result<Vec<Tra
         .map_err(|e| format!("Failed to connect to db: {}", e))?;
 
     let rows = sqlx::query(
-        "SELECT t.id, t.title, t.artist, t.format, t.location_id, t.cover_url, st.order_index
+        "SELECT t.id, t.title, t.artist, t.format, t.location_id, t.cover_url, t.file_path, st.order_index
          FROM tracks t
          INNER JOIN set_tracks st ON t.id = st.track_id
          WHERE st.set_id = ?
@@ -434,6 +438,7 @@ async fn get_tracks_in_set(app: tauri::AppHandle, set_id: i32) -> Result<Vec<Tra
             location_id: row.get("location_id"),
             order_index: row.get("order_index"),
             cover_url: row.get("cover_url"),
+            file_path: row.get("file_path"),
         });
     }
 
@@ -488,12 +493,19 @@ pub fn run() {
             description: "add_cover_url_to_tracks",
             sql: "ALTER TABLE tracks ADD COLUMN cover_url TEXT;",
             kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 5,
+            description: "add_file_path_to_tracks",
+            sql: "ALTER TABLE tracks ADD COLUMN file_path TEXT;",
+            kind: MigrationKind::Up,
         }
     ];
 
     tauri::Builder::default()
         // Initialize tauri-plugin-sql with migrations to auto-create the table
         .plugin(tauri_plugin_sql::Builder::default().add_migrations("sqlite:database.sqlite", migrations).build())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             greet,

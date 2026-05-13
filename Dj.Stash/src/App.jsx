@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 
 function App() {
   const [query, setQuery] = useState("");
@@ -27,6 +28,7 @@ function App() {
         format: "analog",
         locationId: null,
         coverUrl: parsedTrack.cover_url || null,
+        filePath: null,
       });
       setQuery("");
       setParsedTrack(null);
@@ -34,6 +36,47 @@ function App() {
     } catch (error) {
       console.error("Error saving track:", error);
       setErrorMsg(`Save Error: ${error}`);
+    }
+  };
+
+  const handleDigitalFileImport = async () => {
+    try {
+      const selectedPath = await open({
+        multiple: false,
+        filters: [{
+          name: 'Audio',
+          extensions: ['mp3', 'wav', 'aiff', 'flac', 'm4a']
+        }]
+      });
+
+      if (selectedPath) {
+        // Extract filename from the path
+        const filenameWithExt = selectedPath.split(/[/\\]/).pop();
+        const filename = filenameWithExt.substring(0, filenameWithExt.lastIndexOf('.')) || filenameWithExt;
+
+        let artist = "Unknown";
+        let title = filename;
+
+        const parts = filename.split(" - ");
+        if (parts.length >= 2) {
+          artist = parts[0].trim();
+          title = parts.slice(1).join(" - ").trim();
+        }
+
+        await invoke("add_track", {
+          title: title,
+          artist: artist,
+          format: "digital",
+          locationId: null,
+          coverUrl: null,
+          filePath: selectedPath
+        });
+
+        alert(`Digital track '${title}' saved successfully!`);
+      }
+    } catch (error) {
+      console.error("Error importing digital file:", error);
+      setErrorMsg(`Import Error: ${error}`);
     }
   };
 
@@ -130,6 +173,12 @@ function App() {
                   </button>
                 </div>
               )}
+
+              <div style={{ marginTop: '30px' }}>
+                <button className="btn btn-primary" onClick={handleDigitalFileImport} style={{ width: '100%' }}>
+                  ADD DIGITAL FILE
+                </button>
+              </div>
             </div>
           </div>
         </section>
