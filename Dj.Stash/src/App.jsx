@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 
@@ -6,6 +6,20 @@ function App() {
   const [query, setQuery] = useState("");
   const [parsedTrack, setParsedTrack] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [tracks, setTracks] = useState([]);
+
+  const loadTracks = async () => {
+    try {
+      const dbTracks = await invoke("get_tracks");
+      setTracks(dbTracks);
+    } catch (error) {
+      console.error("Error loading tracks:", error);
+    }
+  };
+
+  useEffect(() => {
+    loadTracks();
+  }, []);
 
   const handleDiscogsSearch = async () => {
     try {
@@ -33,6 +47,7 @@ function App() {
       setQuery("");
       setParsedTrack(null);
       alert("Track saved successfully!");
+      await loadTracks();
     } catch (error) {
       console.error("Error saving track:", error);
       setErrorMsg(`Save Error: ${error}`);
@@ -73,6 +88,7 @@ function App() {
         });
 
         alert(`Digital track '${title}' saved successfully!`);
+        await loadTracks();
       }
     } catch (error) {
       console.error("Error importing digital file:", error);
@@ -104,7 +120,24 @@ function App() {
             <div className="search-bar">
               <input type="text" id="search-input" placeholder="SEARCH TRACKS..." />
             </div>
-            <div id="track-list" className="track-list"></div>
+            <div id="track-list" className="track-list">
+              {tracks.map((track) => (
+                <div key={track.id} style={{ display: 'flex', alignItems: 'center', padding: '10px', borderBottom: '1px solid var(--color-border)', background: 'rgba(0,0,0,0.2)' }}>
+                  {track.cover_url ? (
+                    <img src={track.cover_url} alt="Cover" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', marginRight: '15px' }} />
+                  ) : (
+                    <div style={{ width: '40px', height: '40px', background: 'var(--color-bg-deep)', borderRadius: '4px', marginRight: '15px', border: '1px dashed var(--color-border)' }}></div>
+                  )}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 'bold', color: 'var(--color-text-main)' }}>{track.title}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{track.artist}</div>
+                  </div>
+                  <div>
+                    <span className="badge" style={{ fontSize: '10px' }}>{track.format.toUpperCase()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div id="vinyl-panel" className="panel-content" style={{ display: 'none' }}>
