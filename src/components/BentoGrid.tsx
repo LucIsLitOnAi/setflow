@@ -34,8 +34,8 @@ export function BentoGrid() {
 
         <div className="relative z-10 h-full flex flex-col">
           <Compass size={32} className="mb-8 md:mb-16 opacity-80" />
-          <h3 className="text-4xl md:text-6xl font-thin mb-6 md:mb-10">Muster <span className="italic opacity-60">lösen.</span></h3>
-          <p className="text-lg md:text-xl font-light mb-8 md:mb-10 max-w-md">10 Sessions intensive Einzelbegleitung direkt mit deinem Nervensystem.</p>
+          <h3 className="text-4xl md:text-6xl font-thin mb-6 md:mb-10 leading-tight drop-shadow-md">Muster <span className="italic opacity-80 ml-2">lösen.</span></h3>
+          <p className="text-lg md:text-xl font-light mb-8 md:mb-10 max-w-md drop-shadow-md">10 Sessions intensive Einzelbegleitung direkt mit deinem Nervensystem.</p>
           <div className="mt-auto px-6 py-3 md:px-8 md:py-4 rounded-full border border-brand-sand/20 text-xs md:text-sm uppercase font-bold group-hover:bg-brand-sand group-hover:text-brand-moss group-hover:scale-105 inline-block w-fit transition-all duration-500 ease-out text-center">Paket ansehen</div>
         </div>
       </motion.div>

@@ -38,7 +38,7 @@ export default function LandingPage() {
       <section className="relative pt-48 pb-32 px-6 min-h-[100vh] flex flex-col justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-brand-sand/40 to-brand-sand z-10" />
-          <motion.div style={{ y: heroY }} className="w-full h-[120%] -top-[10%] relative bg-brand-moss/15 object-cover opacity-30" />
+          <motion.div style={{ y: heroY }} className="w-full h-[120%] -top-[10%] relative bg-brand-moss/15 object-cover opacity-15" />
         </div>
 
         <motion.div

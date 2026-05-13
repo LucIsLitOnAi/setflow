@@ -13,11 +13,14 @@ export function CustomCursor() {
   const cursorXSpring = useSpring(cursorX, springConfig);
   const cursorYSpring = useSpring(cursorY, springConfig);
 
+
   useEffect(() => {
     const moveCursor = (e: MouseEvent) => {
       cursorX.set(e.clientX - (isHovered ? 24 : 8));
       cursorY.set(e.clientY - (isHovered ? 24 : 8));
+      if (!isVisible) setIsVisible(true);
     };
+
 
     const handleMouseEnter = () => setIsVisible(true);
     const handleMouseLeave = () => setIsVisible(false);
