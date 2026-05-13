@@ -11,6 +11,9 @@ function App() {
   const [sets, setSets] = useState([]);
   const [newSetName, setNewSetName] = useState("");
 
+  const [selectedSet, setSelectedSet] = useState(null);
+  const [activeSetTracks, setActiveSetTracks] = useState([]);
+
   const loadTracks = async () => {
     try {
       const dbTracks = await invoke("get_tracks");
@@ -41,6 +44,21 @@ function App() {
     } catch (error) {
       console.error("Error loading sets:", error);
     }
+  };
+
+  const openSetDetail = async (set) => {
+    try {
+      setSelectedSet(set);
+      const tracks = await invoke("get_tracks_in_set", { setId: set.id });
+      setActiveSetTracks(tracks);
+    } catch (error) {
+      console.error("Error loading tracks for set:", error);
+    }
+  };
+
+  const closeSetDetail = () => {
+    setSelectedSet(null);
+    setActiveSetTracks([]);
   };
 
   useEffect(() => {
@@ -101,6 +119,22 @@ function App() {
       await loadSets();
     } catch (error) {
       console.error("Error creating set:", error);
+    }
+  };
+
+  const handleAddTrackToSet = async (trackId) => {
+    if (!selectedSet) return;
+    try {
+      await invoke("add_track_to_set", {
+        setId: selectedSet.id,
+        trackId: trackId,
+        orderIndex: activeSetTracks.length
+      });
+      // Reload the set's tracks to show the new addition
+      const updatedTracks = await invoke("get_tracks_in_set", { setId: selectedSet.id });
+      setActiveSetTracks(updatedTracks);
+    } catch (error) {
+      console.error("Error adding track to set:", error);
     }
   };
 
@@ -208,6 +242,39 @@ function App() {
                   <div>
                     <span className="badge" style={{ fontSize: '10px' }}>{track.format.toUpperCase()}</span>
                   </div>
+                  {selectedSet && (
+                    <div style={{ marginLeft: '15px' }}>
+                      <button
+                        onClick={() => handleAddTrackToSet(track.id)}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid var(--color-accent-steel)',
+                          color: 'var(--color-accent-steel)',
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          fontSize: '18px',
+                          lineHeight: '1',
+                          outline: 'none',
+                          transition: 'background 0.2s, color 0.2s'
+                        }}
+                        onMouseOver={(e) => {
+                          e.target.style.background = 'var(--color-accent-steel)';
+                          e.target.style.color = '#000';
+                        }}
+                        onMouseOut={(e) => {
+                          e.target.style.background = 'transparent';
+                          e.target.style.color = 'var(--color-accent-steel)';
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -286,43 +353,80 @@ function App() {
                 </button>
               </div>
 
-              <div style={{ marginTop: '30px', borderTop: '1px solid var(--color-border)', paddingTop: '20px' }}>
-                <h3 style={{ color: 'var(--color-accent-steel)', marginBottom: '10px' }}>SET MANAGEMENT</h3>
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                  <input
-                    type="text"
-                    value={newSetName}
-                    onChange={(e) => setNewSetName(e.target.value)}
-                    placeholder="Enter Set Name..."
-                    style={{ flex: 1, padding: '8px', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--color-border)', color: '#fff' }}
-                  />
-                  <button className="btn btn-primary" onClick={handleCreateSet}>CREATE SET</button>
-                </div>
+              {selectedSet ? (
+                <div style={{ marginTop: '30px', borderTop: '1px solid var(--color-border)', paddingTop: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
+                    <h3 style={{ color: 'var(--color-accent-steel)', margin: 0 }}>SET: {selectedSet.name}</h3>
+                    <button className="btn b-out" onClick={closeSetDetail} style={{ padding: '4px 8px', fontSize: '11px' }}>BACK</button>
+                  </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {sets.map(set => (
-                    <div
-                      key={set.id}
-                      onClick={() => console.log("Set geklickt:", set.id)}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid var(--color-border)',
-                        color: '#fff',
-                        padding: '12px',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        transition: 'background 0.2s'
-                      }}
-                    >
-                      <span style={{ fontWeight: 'bold' }}>{set.name}</span>
-                      <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>ID: {set.id}</span>
-                    </div>
-                  ))}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {activeSetTracks.length === 0 ? (
+                      <div style={{ color: 'var(--color-text-muted)', fontSize: '12px', fontStyle: 'italic' }}>No tracks added yet. Click '+' in the library to add tracks.</div>
+                    ) : (
+                      activeSetTracks.map((track, index) => (
+                        <div key={`${track.id}-${index}`} style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '6px', borderRadius: '4px', border: '1px solid var(--color-border)' }}>
+                          <div style={{ fontSize: '10px', color: 'var(--color-accent-steel)', width: '20px', textAlign: 'center', fontWeight: 'bold' }}>
+                            {index + 1}.
+                          </div>
+                          {track.cover_url ? (
+                            <img src={track.cover_url} alt="Cover" style={{ width: '24px', height: '24px', objectFit: 'cover', borderRadius: '2px', marginRight: '10px' }} />
+                          ) : (
+                            <div style={{ width: '24px', height: '24px', background: 'var(--color-bg-deep)', borderRadius: '2px', marginRight: '10px', border: '1px dashed var(--color-border)' }}></div>
+                          )}
+                          <div style={{ flex: 1, overflow: 'hidden' }}>
+                            <div style={{ fontWeight: 'bold', color: 'var(--color-text-main)', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{track.title}</div>
+                            <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{track.artist}</div>
+                          </div>
+                          <div>
+                            <span className="badge" style={{ fontSize: '8px', padding: '2px 4px' }}>{track.format.toUpperCase()}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div style={{ marginTop: '30px', borderTop: '1px solid var(--color-border)', paddingTop: '20px' }}>
+                  <h3 style={{ color: 'var(--color-accent-steel)', marginBottom: '10px' }}>SET MANAGEMENT</h3>
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                    <input
+                      type="text"
+                      value={newSetName}
+                      onChange={(e) => setNewSetName(e.target.value)}
+                      placeholder="Enter Set Name..."
+                      style={{ flex: 1, padding: '8px', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--color-border)', color: '#fff' }}
+                    />
+                    <button className="btn btn-primary" onClick={handleCreateSet}>CREATE SET</button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {sets.map(set => (
+                      <div
+                        key={set.id}
+                        onClick={() => openSetDetail(set)}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid var(--color-border)',
+                          color: '#fff',
+                          padding: '12px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          transition: 'background 0.2s'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                        onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+                      >
+                        <span style={{ fontWeight: 'bold' }}>{set.name}</span>
+                        <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>ID: {set.id}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </section>
