@@ -190,7 +190,7 @@ async fn get_tracks(app: tauri::AppHandle) -> Result<Vec<Track>, String> {
 }
 
 #[tauri::command]
-async fn update_track_location(app: tauri::AppHandle, track_id: i32, new_location_id: i32) -> Result<String, String> {
+async fn update_track_location(app: tauri::AppHandle, track_id: i32, new_location_id: Option<i32>) -> Result<String, String> {
     let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let db_path = app_dir.join("database.sqlite");
 

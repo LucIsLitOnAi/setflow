@@ -7,6 +7,7 @@ function App() {
   const [parsedTrack, setParsedTrack] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [tracks, setTracks] = useState([]);
+  const [locations, setLocations] = useState([]);
 
   const loadTracks = async () => {
     try {
@@ -17,8 +18,23 @@ function App() {
     }
   };
 
+  const loadLocations = async () => {
+    try {
+      let dbLocations = await invoke("get_locations");
+      if (dbLocations.length === 0) {
+        // Fallback: create a test location if the array is empty
+        await invoke("add_location", { name: "Record Bag", locationType: "bag" });
+        dbLocations = await invoke("get_locations");
+      }
+      setLocations(dbLocations);
+    } catch (error) {
+      console.error("Error loading locations:", error);
+    }
+  };
+
   useEffect(() => {
     loadTracks();
+    loadLocations();
   }, []);
 
   const handleDiscogsSearch = async () => {
@@ -51,6 +67,17 @@ function App() {
     } catch (error) {
       console.error("Error saving track:", error);
       setErrorMsg(`Save Error: ${error}`);
+    }
+  };
+
+  const handleLocationChange = async (trackId, newLocationIdStr) => {
+    try {
+      // If empty string (""), pass null to the backend
+      const newLocationId = newLocationIdStr ? parseInt(newLocationIdStr, 10) : null;
+      await invoke("update_track_location", { trackId, newLocationId });
+      await loadTracks();
+    } catch (error) {
+      console.error("Error updating track location:", error);
     }
   };
 
@@ -131,6 +158,29 @@ function App() {
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 'bold', color: 'var(--color-text-main)' }}>{track.title}</div>
                     <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{track.artist}</div>
+                  </div>
+                  <div style={{ marginRight: '15px' }}>
+                    <select
+                      value={track.location_id || ""}
+                      onChange={(e) => handleLocationChange(track.id, e.target.value)}
+                      style={{
+                        background: 'rgba(0,0,0,0.5)',
+                        border: '1px solid var(--color-border)',
+                        color: 'var(--color-text-main)',
+                        padding: '4px 8px',
+                        fontSize: '11px',
+                        borderRadius: '4px',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="">Kein Ort zugewiesen</option>
+                      {locations.map((loc) => (
+                        <option key={loc.id} value={loc.id}>
+                          {loc.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <span className="badge" style={{ fontSize: '10px' }}>{track.format.toUpperCase()}</span>
