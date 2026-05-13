@@ -24,6 +24,8 @@ async fn test_db_connection(app: tauri::AppHandle) -> Result<String, String> {
 use tauri_plugin_sql::{Migration, MigrationKind};
 use serde::Serialize;
 use sqlx::{sqlite::SqlitePoolOptions, Row};
+use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, USER_AGENT};
+use std::env;
 
 #[derive(Serialize)]
 struct Location {
@@ -327,6 +329,41 @@ async fn seed_test_data(app: tauri::AppHandle) -> Result<i32, String> {
 }
 
 #[tauri::command]
+async fn search_discogs_test(query: String) -> Result<String, String> {
+    // Attempt to load .env variables
+    let _ = dotenvy::dotenv();
+
+    let token = env::var("DISCOGS_TOKEN").unwrap_or_else(|_| "DUMMY_TOKEN".to_string());
+
+    let mut headers = HeaderMap::new();
+    headers.insert(USER_AGENT, HeaderValue::from_static("DjStash/1.0"));
+
+    let auth_value = format!("Discogs token={}", token);
+    if let Ok(header_val) = HeaderValue::from_str(&auth_value) {
+        headers.insert(AUTHORIZATION, header_val);
+    }
+
+    let client = reqwest::Client::builder()
+        .default_headers(headers)
+        .build()
+        .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
+
+    let url = format!("https://api.discogs.com/database/search?q={}", query);
+
+    let response = client.get(&url)
+        .send()
+        .await
+        .map_err(|e| format!("HTTP request failed: {}", e))?;
+
+    if response.status().is_success() {
+        let text = response.text().await.map_err(|e| format!("Failed to read response: {}", e))?;
+        Ok(text)
+    } else {
+        Err(format!("Discogs API returned error status: {}", response.status()))
+    }
+}
+
+#[tauri::command]
 async fn get_tracks_in_set(app: tauri::AppHandle, set_id: i32) -> Result<Vec<TrackInSet>, String> {
     let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let db_path = app_dir.join("database.sqlite");
@@ -426,7 +463,8 @@ pub fn run() {
             get_sets,
             add_track_to_set,
             get_tracks_in_set,
-            seed_test_data
+            seed_test_data,
+            search_discogs_test
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
