@@ -442,6 +442,37 @@ async fn update_set_track_order(app: tauri::AppHandle, set_id: i32, track_ids: V
 }
 
 #[tauri::command]
+async fn update_track_metadata(
+    app: tauri::AppHandle,
+    track_id: i32,
+    artist: String,
+    title: String,
+    bpm: Option<i32>,
+    duration: Option<i32>
+) -> Result<String, String> {
+    let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let db_path = app_dir.join("database.sqlite");
+
+    let db_url = format!("sqlite:{}", db_path.to_string_lossy());
+    let pool = SqlitePoolOptions::new()
+        .connect(&db_url)
+        .await
+        .map_err(|e| format!("Failed to connect to db: {}", e))?;
+
+    sqlx::query("UPDATE tracks SET artist = ?, title = ?, bpm = ?, duration = ? WHERE id = ?")
+        .bind(artist)
+        .bind(title)
+        .bind(bpm)
+        .bind(duration)
+        .bind(track_id)
+        .execute(&pool)
+        .await
+        .map_err(|e| format!("Failed to update track metadata: {}", e))?;
+
+    Ok("Track metadata updated successfully".to_string())
+}
+
+#[tauri::command]
 async fn get_tracks_in_set(app: tauri::AppHandle, set_id: i32) -> Result<Vec<TrackInSet>, String> {
     let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let db_path = app_dir.join("database.sqlite");
@@ -567,7 +598,8 @@ pub fn run() {
             get_tracks_in_set,
             seed_test_data,
             search_discogs,
-            update_set_track_order
+            update_set_track_order,
+            update_track_metadata
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

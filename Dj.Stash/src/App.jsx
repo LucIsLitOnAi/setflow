@@ -15,6 +15,9 @@ function App() {
   const [activeSetTracks, setActiveSetTracks] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
 
+  const [editingTrackId, setEditingTrackId] = useState(null);
+  const [editFormData, setEditFormData] = useState({ artist: "", title: "", bpm: "", duration: "" });
+
   const loadTracks = async () => {
     try {
       const dbTracks = await invoke("get_tracks");
@@ -186,6 +189,44 @@ function App() {
     }
   };
 
+  const startEditing = (track) => {
+    setEditingTrackId(track.id);
+    setEditFormData({
+      artist: track.artist || "",
+      title: track.title || "",
+      bpm: track.bpm || "",
+      duration: track.duration || ""
+    });
+  };
+
+  const handleEditChange = (field, value) => {
+    setEditFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const saveEdit = async () => {
+    try {
+      const bpmVal = editFormData.bpm ? parseInt(editFormData.bpm, 10) : null;
+      const durationVal = editFormData.duration ? parseInt(editFormData.duration, 10) : null;
+
+      await invoke("update_track_metadata", {
+        trackId: editingTrackId,
+        artist: editFormData.artist.trim(),
+        title: editFormData.title.trim(),
+        bpm: isNaN(bpmVal) ? null : bpmVal,
+        duration: isNaN(durationVal) ? null : durationVal
+      });
+
+      setEditingTrackId(null);
+      await loadTracks();
+      if (selectedSet) {
+        const tracks = await invoke("get_tracks_in_set", { setId: selectedSet.id });
+        setActiveSetTracks(tracks);
+      }
+    } catch (error) {
+      console.error("Error saving track metadata:", error);
+    }
+  };
+
   const handleDigitalFileImport = async () => {
     try {
       const selectedPath = await open({
@@ -263,13 +304,50 @@ function App() {
                     <div style={{ width: '40px', height: '40px', background: 'var(--color-bg-deep)', borderRadius: '4px', marginRight: '15px', border: '1px dashed var(--color-border)' }}></div>
                   )}
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 'bold', color: 'var(--color-text-main)' }}>{track.title}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                      {track.artist}
-                      <span style={{ marginLeft: '10px', color: 'rgba(255,255,255,0.4)' }}>
-                        BPM: {track.bpm || '--'} | {track.duration ? formatDuration(track.duration) : '--:--'}
-                      </span>
-                    </div>
+                    {editingTrackId === track.id ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingRight: '10px' }}>
+                        <input
+                          type="text"
+                          value={editFormData.title}
+                          onChange={(e) => handleEditChange('title', e.target.value)}
+                          placeholder="Title"
+                          style={{ background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderBottom: '1px solid var(--color-accent-steel)', outline: 'none', fontSize: '12px', fontWeight: 'bold' }}
+                        />
+                        <div style={{ display: 'flex', gap: '8px', fontSize: '11px' }}>
+                          <input
+                            type="text"
+                            value={editFormData.artist}
+                            onChange={(e) => handleEditChange('artist', e.target.value)}
+                            placeholder="Artist"
+                            style={{ flex: 1, background: 'rgba(0,0,0,0.5)', color: 'var(--color-text-muted)', border: 'none', borderBottom: '1px solid var(--color-accent-steel)', outline: 'none' }}
+                          />
+                          <input
+                            type="number"
+                            value={editFormData.bpm}
+                            onChange={(e) => handleEditChange('bpm', e.target.value)}
+                            placeholder="BPM"
+                            style={{ width: '45px', background: 'rgba(0,0,0,0.5)', color: 'rgba(255,255,255,0.4)', border: 'none', borderBottom: '1px solid var(--color-accent-steel)', outline: 'none' }}
+                          />
+                          <input
+                            type="number"
+                            value={editFormData.duration}
+                            onChange={(e) => handleEditChange('duration', e.target.value)}
+                            placeholder="Sec"
+                            style={{ width: '45px', background: 'rgba(0,0,0,0.5)', color: 'rgba(255,255,255,0.4)', border: 'none', borderBottom: '1px solid var(--color-accent-steel)', outline: 'none' }}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ fontWeight: 'bold', color: 'var(--color-text-main)' }}>{track.title}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                          {track.artist}
+                          <span style={{ marginLeft: '10px', color: 'rgba(255,255,255,0.4)' }}>
+                            BPM: {track.bpm || '--'} | {track.duration ? formatDuration(track.duration) : '--:--'}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div style={{ marginRight: '15px' }}>
                     <select
@@ -297,8 +375,25 @@ function App() {
                   <div>
                     <span className="badge" style={{ fontSize: '10px' }}>{track.format.toUpperCase()}</span>
                   </div>
-                  {selectedSet && (
-                    <div style={{ marginLeft: '15px' }}>
+                  <div style={{ marginLeft: '15px', display: 'flex', gap: '8px' }}>
+                    {editingTrackId === track.id ? (
+                      <button
+                        onClick={saveEdit}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--color-accent-steel)', cursor: 'pointer', fontSize: '16px' }}
+                        title="Save"
+                      >
+                        💾
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => startEditing(track)}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '14px' }}
+                        title="Edit"
+                      >
+                        ✏️
+                      </button>
+                    )}
+                    {selectedSet && (
                       <button
                         onClick={() => handleAddTrackToSet(track.id)}
                         style={{
@@ -328,8 +423,8 @@ function App() {
                       >
                         +
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
