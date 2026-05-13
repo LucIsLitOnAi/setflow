@@ -3,19 +3,22 @@ import { invoke } from "@tauri-apps/api/core";
 
 function App() {
   useEffect(() => {
-    const fetchBackendData = async () => {
+    const runSeedTest = async () => {
       try {
-        const locations = await invoke("get_locations");
-        console.log("Fetched locations from backend:", locations);
+        // 1. Seed the test data and get the returned set ID
+        const setId = await invoke("seed_test_data");
+        console.log("Seed successful, created Set ID:", setId);
 
-        const sets = await invoke("get_sets");
-        console.log("Fetched sets from backend:", sets);
+        // 2. Fetch the linked tracks for this specific set
+        const tracksInSet = await invoke("get_tracks_in_set", { setId });
+        console.log("Fetched linked set data (Track + Location + Order):", tracksInSet);
+
       } catch (error) {
-        console.error("Error communicating with backend:", error);
+        console.error("Error during seed test:", error);
       }
     };
 
-    fetchBackendData();
+    runSeedTest();
   }, []);
 
   return (

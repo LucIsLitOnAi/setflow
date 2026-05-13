@@ -270,6 +270,63 @@ async fn add_track_to_set(app: tauri::AppHandle, set_id: i32, track_id: i32, ord
 }
 
 #[tauri::command]
+async fn seed_test_data(app: tauri::AppHandle) -> Result<i32, String> {
+    let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let db_path = app_dir.join("database.sqlite");
+
+    let db_url = format!("sqlite:{}", db_path.to_string_lossy());
+    let pool = SqlitePoolOptions::new()
+        .connect(&db_url)
+        .await
+        .map_err(|e| format!("Failed to connect to db: {}", e))?;
+
+    // Clear existing data to ensure a clean state, especially important for Strict Mode double-firing
+    sqlx::query("DELETE FROM set_tracks").execute(&pool).await.map_err(|e| e.to_string())?;
+    sqlx::query("DELETE FROM sets").execute(&pool).await.map_err(|e| e.to_string())?;
+    sqlx::query("DELETE FROM tracks").execute(&pool).await.map_err(|e| e.to_string())?;
+    sqlx::query("DELETE FROM locations").execute(&pool).await.map_err(|e| e.to_string())?;
+
+    // 1. Create a Location
+    let location_id = sqlx::query("INSERT INTO locations (name, location_type) VALUES (?, ?) RETURNING id")
+        .bind("Warehouse Berlin")
+        .bind("warehouse")
+        .fetch_one(&pool)
+        .await
+        .map_err(|e| format!("Failed to seed location: {}", e))?
+        .get::<i32, _>("id");
+
+    // 2. Create a Track
+    let track_id = sqlx::query("INSERT INTO tracks (title, artist, format, location_id) VALUES (?, ?, ?, ?) RETURNING id")
+        .bind("Test Vinyl 1")
+        .bind("Unknown")
+        .bind("analog")
+        .bind(location_id)
+        .fetch_one(&pool)
+        .await
+        .map_err(|e| format!("Failed to seed track: {}", e))?
+        .get::<i32, _>("id");
+
+    // 3. Create a Set
+    let set_id = sqlx::query("INSERT INTO sets (name) VALUES (?) RETURNING id")
+        .bind("Berlin Gig 2026")
+        .fetch_one(&pool)
+        .await
+        .map_err(|e| format!("Failed to seed set: {}", e))?
+        .get::<i32, _>("id");
+
+    // 4. Add Track to Set
+    sqlx::query("INSERT INTO set_tracks (set_id, track_id, order_index) VALUES (?, ?, ?)")
+        .bind(set_id)
+        .bind(track_id)
+        .bind(0)
+        .execute(&pool)
+        .await
+        .map_err(|e| format!("Failed to seed set_track: {}", e))?;
+
+    Ok(set_id)
+}
+
+#[tauri::command]
 async fn get_tracks_in_set(app: tauri::AppHandle, set_id: i32) -> Result<Vec<TrackInSet>, String> {
     let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let db_path = app_dir.join("database.sqlite");
@@ -368,7 +425,8 @@ pub fn run() {
             create_set,
             get_sets,
             add_track_to_set,
-            get_tracks_in_set
+            get_tracks_in_set,
+            seed_test_data
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
