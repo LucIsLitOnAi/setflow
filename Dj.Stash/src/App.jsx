@@ -1,25 +1,19 @@
-import React, { useEffect } from "react";
+import React, { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 function App() {
-  useEffect(() => {
-    const runSeedTest = async () => {
-      try {
-        // 1. Seed the test data and get the returned set ID
-        const setId = await invoke("seed_test_data");
-        console.log("Seed successful, created Set ID:", setId);
+  const [query, setQuery] = useState("");
+  const [response, setResponse] = useState("");
 
-        // 2. Fetch the linked tracks for this specific set
-        const tracksInSet = await invoke("get_tracks_in_set", { setId });
-        console.log("Fetched linked set data (Track + Location + Order):", tracksInSet);
-
-      } catch (error) {
-        console.error("Error during seed test:", error);
-      }
-    };
-
-    runSeedTest();
-  }, []);
+  const handleDiscogsSearch = async () => {
+    try {
+      const result = await invoke("search_discogs_test", { query });
+      setResponse(result);
+    } catch (error) {
+      console.error("Error searching Discogs:", error);
+      setResponse(`Error: ${error}`);
+    }
+  };
 
   return (
     <>
@@ -77,7 +71,26 @@ function App() {
 
         {/* ── RIGHT ZONE: Detail Panel ── */}
         <section id="pnl" className="zone-right">
-          <div id="pi" className="panel-inner"></div>
+          <div id="pi" className="panel-inner">
+            <div style={{ padding: '20px' }}>
+              <h3 style={{ color: 'var(--color-accent-steel)', marginBottom: '10px' }}>DISCOGS TEST SEARCH</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Enter Barcode / Title..."
+                  style={{ flex: 1, padding: '8px', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--color-border)', color: '#fff' }}
+                />
+                <button className="btn btn-primary" onClick={handleDiscogsSearch}>SEARCH</button>
+              </div>
+              {response && (
+                <pre style={{ background: 'rgba(0,0,0,0.7)', padding: '10px', border: '1px solid var(--color-border)', color: '#fff', fontSize: '11px', overflowX: 'auto', maxHeight: '400px', whiteSpace: 'pre-wrap' }}>
+                  {response}
+                </pre>
+              )}
+            </div>
+          </div>
         </section>
       </div>
     </>
