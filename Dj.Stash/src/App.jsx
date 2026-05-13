@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
+import { writeTextFile } from "@tauri-apps/plugin-fs";
+import { save } from "@tauri-apps/plugin-dialog";
 
 function App() {
   const [query, setQuery] = useState("");
@@ -130,6 +132,41 @@ function App() {
       await loadTracks();
     } catch (error) {
       console.error("Error updating track location:", error);
+    }
+  };
+
+  const handleRemoveTrackFromSet = async (trackId) => {
+    if (!selectedSet) return;
+    try {
+      await invoke("remove_track_from_set", { setId: selectedSet.id, trackId });
+      const tracks = await invoke("get_tracks_in_set", { setId: selectedSet.id });
+      setActiveSetTracks(tracks);
+    } catch (error) {
+      console.error("Error removing track from set:", error);
+    }
+  };
+
+  const handleExportSet = async () => {
+    if (!selectedSet || activeSetTracks.length === 0) return;
+    try {
+      const filePath = await save({
+        filters: [{ name: 'Text', extensions: ['txt'] }],
+        defaultPath: `${selectedSet.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_export.txt`,
+      });
+
+      if (!filePath) return;
+
+      const trackListString = activeSetTracks.map((t, idx) => {
+        const bpmPart = t.bpm ? ` (${t.bpm} BPM)` : "";
+        return `${idx + 1}. ${t.artist} - ${t.title}${bpmPart} - ${t.format.charAt(0).toUpperCase() + t.format.slice(1)}`;
+      }).join('\n');
+
+      const header = `SET: ${selectedSet.name}\nTRACKS: ${activeSetTracks.length}\n-----------------------------------\n`;
+      await writeTextFile(filePath, header + trackListString);
+      alert("Set exported successfully!");
+    } catch (error) {
+      console.error("Error exporting set:", error);
+      alert("Failed to export set.");
     }
   };
 
@@ -568,10 +605,25 @@ function App() {
                 <div style={{ marginTop: '30px', borderTop: '1px solid var(--color-border)', paddingTop: '20px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                     <h3 style={{ color: 'var(--color-accent-steel)', margin: 0 }}>SET: {selectedSet.name}</h3>
-                    <button className="btn b-out" onClick={closeSetDetail} style={{ padding: '4px 8px', fontSize: '11px' }}>BACK</button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button className="btn b-out" onClick={handleExportSet} style={{ padding: '4px 8px', fontSize: '11px' }}>EXPORT SET</button>
+                      <button className="btn b-out" onClick={closeSetDetail} style={{ padding: '4px 8px', fontSize: '11px' }}>BACK</button>
+                    </div>
                   </div>
                   <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '15px' }}>
-                    Tracks: {activeSetTracks.length} | Dauer: {formatDuration(activeSetTracks.reduce((acc, curr) => acc + (curr.duration || 0), 0))}
+                    Tracks: {activeSetTracks.length} | Dauer: {formatDuration(activeSetTracks.reduce((acc, curr) => acc + (curr.duration || 0), 0))} | Ø BPM: {
+                      (() => {
+                        const bpmTracks = activeSetTracks.filter(t => t.bpm && t.bpm > 0);
+                        if (bpmTracks.length === 0) return "--";
+                        return Math.round(bpmTracks.reduce((acc, t) => acc + t.bpm, 0) / bpmTracks.length);
+                      })()
+                    } | {
+                      (() => {
+                        const analogs = activeSetTracks.filter(t => t.format === 'analog').length;
+                        const digitals = activeSetTracks.filter(t => t.format === 'digital').length;
+                        return `Analog: ${analogs} | Digital: ${digitals}`;
+                      })()
+                    }
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -598,6 +650,15 @@ function App() {
                           onDragLeave={(e) => e.currentTarget.style.border = '1px solid var(--color-border)'}
                           onDropCapture={(e) => e.currentTarget.style.border = '1px solid var(--color-border)'}
                         >
+                          <div
+                            onClick={() => handleRemoveTrackFromSet(track.id)}
+                            style={{ color: 'var(--color-text-muted)', cursor: 'pointer', padding: '0 6px', fontSize: '12px', fontWeight: 'bold' }}
+                            title="Remove track"
+                            onMouseOver={(e) => e.target.style.color = '#ff4444'}
+                            onMouseOut={(e) => e.target.style.color = 'var(--color-text-muted)'}
+                          >
+                            X
+                          </div>
                           <div style={{ cursor: 'grab', color: 'var(--color-text-muted)', padding: '0 8px', fontSize: '14px', userSelect: 'none' }}>
                             ≡
                           </div>

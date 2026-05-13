@@ -473,6 +473,27 @@ async fn update_track_metadata(
 }
 
 #[tauri::command]
+async fn remove_track_from_set(app: tauri::AppHandle, set_id: i32, track_id: i32) -> Result<String, String> {
+    let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let db_path = app_dir.join("database.sqlite");
+
+    let db_url = format!("sqlite:{}", db_path.to_string_lossy());
+    let pool = SqlitePoolOptions::new()
+        .connect(&db_url)
+        .await
+        .map_err(|e| format!("Failed to connect to db: {}", e))?;
+
+    sqlx::query("DELETE FROM set_tracks WHERE set_id = ? AND track_id = ?")
+        .bind(set_id)
+        .bind(track_id)
+        .execute(&pool)
+        .await
+        .map_err(|e| format!("Failed to remove track from set: {}", e))?;
+
+    Ok("Track removed from set successfully".to_string())
+}
+
+#[tauri::command]
 async fn get_tracks_in_set(app: tauri::AppHandle, set_id: i32) -> Result<Vec<TrackInSet>, String> {
     let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let db_path = app_dir.join("database.sqlite");
@@ -582,6 +603,7 @@ pub fn run() {
         // Initialize tauri-plugin-sql with migrations to auto-create the table
         .plugin(tauri_plugin_sql::Builder::default().add_migrations("sqlite:database.sqlite", migrations).build())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             greet,
@@ -599,7 +621,8 @@ pub fn run() {
             seed_test_data,
             search_discogs,
             update_set_track_order,
-            update_track_metadata
+            update_track_metadata,
+            remove_track_from_set
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
