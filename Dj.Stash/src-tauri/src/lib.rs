@@ -36,6 +36,7 @@ struct DiscogsSearchResponse {
 struct DiscogsResult {
     title: String,
     year: Option<String>,
+    thumb: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -43,6 +44,7 @@ struct ParsedDiscogsTrack {
     title: String,
     artist: String,
     year: Option<String>,
+    cover_url: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -59,6 +61,7 @@ struct Track {
     artist: String,
     format: String,
     location_id: Option<i32>,
+    cover_url: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -75,6 +78,7 @@ struct TrackInSet {
     format: String,
     location_id: Option<i32>,
     order_index: Option<i32>,
+    cover_url: Option<String>,
 }
 
 #[tauri::command]
@@ -127,7 +131,7 @@ async fn get_locations(app: tauri::AppHandle) -> Result<Vec<Location>, String> {
 }
 
 #[tauri::command]
-async fn add_track(app: tauri::AppHandle, title: String, artist: String, format: String, location_id: Option<i32>) -> Result<String, String> {
+async fn add_track(app: tauri::AppHandle, title: String, artist: String, format: String, location_id: Option<i32>, cover_url: Option<String>) -> Result<String, String> {
     let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let db_path = app_dir.join("database.sqlite");
 
@@ -137,11 +141,12 @@ async fn add_track(app: tauri::AppHandle, title: String, artist: String, format:
         .await
         .map_err(|e| format!("Failed to connect to db: {}", e))?;
 
-    sqlx::query("INSERT INTO tracks (title, artist, format, location_id) VALUES (?, ?, ?, ?)")
+    sqlx::query("INSERT INTO tracks (title, artist, format, location_id, cover_url) VALUES (?, ?, ?, ?, ?)")
         .bind(title)
         .bind(artist)
         .bind(format)
         .bind(location_id)
+        .bind(cover_url)
         .execute(&pool)
         .await
         .map_err(|e| format!("Failed to insert track: {}", e))?;
@@ -160,7 +165,7 @@ async fn get_tracks(app: tauri::AppHandle) -> Result<Vec<Track>, String> {
         .await
         .map_err(|e| format!("Failed to connect to db: {}", e))?;
 
-    let rows = sqlx::query("SELECT id, title, artist, format, location_id FROM tracks")
+    let rows = sqlx::query("SELECT id, title, artist, format, location_id, cover_url FROM tracks")
         .fetch_all(&pool)
         .await
         .map_err(|e| format!("Failed to fetch tracks: {}", e))?;
@@ -173,6 +178,7 @@ async fn get_tracks(app: tauri::AppHandle) -> Result<Vec<Track>, String> {
             artist: row.get("artist"),
             format: row.get("format"),
             location_id: row.get("location_id"),
+            cover_url: row.get("cover_url"),
         });
     }
 
@@ -385,6 +391,7 @@ async fn search_discogs(query: String) -> Result<ParsedDiscogsTrack, String> {
                 artist: artist.trim().to_string(),
                 title: title.trim().to_string(),
                 year: first_result.year,
+                cover_url: first_result.thumb,
             })
         } else {
             Err("No results found on Discogs.".to_string())
@@ -406,7 +413,7 @@ async fn get_tracks_in_set(app: tauri::AppHandle, set_id: i32) -> Result<Vec<Tra
         .map_err(|e| format!("Failed to connect to db: {}", e))?;
 
     let rows = sqlx::query(
-        "SELECT t.id, t.title, t.artist, t.format, t.location_id, st.order_index
+        "SELECT t.id, t.title, t.artist, t.format, t.location_id, t.cover_url, st.order_index
          FROM tracks t
          INNER JOIN set_tracks st ON t.id = st.track_id
          WHERE st.set_id = ?
@@ -426,6 +433,7 @@ async fn get_tracks_in_set(app: tauri::AppHandle, set_id: i32) -> Result<Vec<Tra
             format: row.get("format"),
             location_id: row.get("location_id"),
             order_index: row.get("order_index"),
+            cover_url: row.get("cover_url"),
         });
     }
 
@@ -473,6 +481,12 @@ pub fn run() {
                 FOREIGN KEY(set_id) REFERENCES sets(id) ON DELETE CASCADE,
                 FOREIGN KEY(track_id) REFERENCES tracks(id) ON DELETE CASCADE
             );",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 4,
+            description: "add_cover_url_to_tracks",
+            sql: "ALTER TABLE tracks ADD COLUMN cover_url TEXT;",
             kind: MigrationKind::Up,
         }
     ];

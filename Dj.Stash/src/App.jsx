@@ -26,6 +26,7 @@ function App() {
         artist: parsedTrack.artist,
         format: "analog",
         locationId: null,
+        coverUrl: parsedTrack.cover_url || null,
       });
       setQuery("");
       setParsedTrack(null);
@@ -112,6 +113,13 @@ function App() {
               )}
               {parsedTrack && (
                 <div style={{ background: 'rgba(0,0,0,0.7)', padding: '15px', border: '1px solid var(--color-border)', borderRadius: '4px' }}>
+                  {parsedTrack.cover_url && (
+                    <img
+                      src={parsedTrack.cover_url}
+                      alt="Cover"
+                      style={{ maxWidth: '150px', marginBottom: '10px', display: 'block', borderRadius: '4px' }}
+                    />
+                  )}
                   <div style={{ marginBottom: '10px', color: '#fff' }}>
                     <strong>Artist:</strong> {parsedTrack.artist} <br/>
                     <strong>Title:</strong> {parsedTrack.title} <br/>
