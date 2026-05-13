@@ -3,15 +3,36 @@ import { invoke } from "@tauri-apps/api/core";
 
 function App() {
   const [query, setQuery] = useState("");
-  const [response, setResponse] = useState("");
+  const [parsedTrack, setParsedTrack] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleDiscogsSearch = async () => {
     try {
-      const result = await invoke("search_discogs_test", { query });
-      setResponse(result);
+      setErrorMsg("");
+      const result = await invoke("search_discogs", { query });
+      setParsedTrack(result);
     } catch (error) {
       console.error("Error searching Discogs:", error);
-      setResponse(`Error: ${error}`);
+      setParsedTrack(null);
+      setErrorMsg(`Error: ${error}`);
+    }
+  };
+
+  const saveTrack = async () => {
+    if (!parsedTrack) return;
+    try {
+      await invoke("add_track", {
+        title: parsedTrack.title,
+        artist: parsedTrack.artist,
+        format: "analog",
+        locationId: null,
+      });
+      setQuery("");
+      setParsedTrack(null);
+      alert("Track saved successfully!");
+    } catch (error) {
+      console.error("Error saving track:", error);
+      setErrorMsg(`Save Error: ${error}`);
     }
   };
 
@@ -84,10 +105,22 @@ function App() {
                 />
                 <button className="btn btn-primary" onClick={handleDiscogsSearch}>SEARCH</button>
               </div>
-              {response && (
-                <pre style={{ background: 'rgba(0,0,0,0.7)', padding: '10px', border: '1px solid var(--color-border)', color: '#fff', fontSize: '11px', overflowX: 'auto', maxHeight: '400px', whiteSpace: 'pre-wrap' }}>
-                  {response}
-                </pre>
+              {errorMsg && (
+                <div style={{ color: 'red', marginBottom: '10px', fontSize: '12px' }}>
+                  {errorMsg}
+                </div>
+              )}
+              {parsedTrack && (
+                <div style={{ background: 'rgba(0,0,0,0.7)', padding: '15px', border: '1px solid var(--color-border)', borderRadius: '4px' }}>
+                  <div style={{ marginBottom: '10px', color: '#fff' }}>
+                    <strong>Artist:</strong> {parsedTrack.artist} <br/>
+                    <strong>Title:</strong> {parsedTrack.title} <br/>
+                    <strong>Year:</strong> {parsedTrack.year || "N/A"}
+                  </div>
+                  <button className="btn btn-primary" onClick={saveTrack} style={{ width: '100%' }}>
+                    SAVE TO DB
+                  </button>
+                </div>
               )}
             </div>
           </div>

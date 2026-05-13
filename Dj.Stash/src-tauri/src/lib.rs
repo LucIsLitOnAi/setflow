@@ -22,10 +22,28 @@ async fn test_db_connection(app: tauri::AppHandle) -> Result<String, String> {
 }
 
 use tauri_plugin_sql::{Migration, MigrationKind};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::{sqlite::SqlitePoolOptions, Row};
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, USER_AGENT};
 use std::env;
+
+#[derive(Deserialize)]
+struct DiscogsSearchResponse {
+    results: Vec<DiscogsResult>,
+}
+
+#[derive(Deserialize)]
+struct DiscogsResult {
+    title: String,
+    year: Option<String>,
+}
+
+#[derive(Serialize)]
+struct ParsedDiscogsTrack {
+    title: String,
+    artist: String,
+    year: Option<String>,
+}
 
 #[derive(Serialize)]
 struct Location {
@@ -329,15 +347,12 @@ async fn seed_test_data(app: tauri::AppHandle) -> Result<i32, String> {
 }
 
 #[tauri::command]
-async fn search_discogs_test(query: String) -> Result<String, String> {
-    // Attempt to load .env variables
+async fn search_discogs(query: String) -> Result<ParsedDiscogsTrack, String> {
     let _ = dotenvy::dotenv();
-
     let token = env::var("DISCOGS_TOKEN").unwrap_or_else(|_| "DUMMY_TOKEN".to_string());
 
     let mut headers = HeaderMap::new();
     headers.insert(USER_AGENT, HeaderValue::from_static("DjStash/1.0"));
-
     let auth_value = format!("Discogs token={}", token);
     if let Ok(header_val) = HeaderValue::from_str(&auth_value) {
         headers.insert(AUTHORIZATION, header_val);
@@ -356,8 +371,24 @@ async fn search_discogs_test(query: String) -> Result<String, String> {
         .map_err(|e| format!("HTTP request failed: {}", e))?;
 
     if response.status().is_success() {
-        let text = response.text().await.map_err(|e| format!("Failed to read response: {}", e))?;
-        Ok(text)
+        let data: DiscogsSearchResponse = response.json().await.map_err(|e| format!("Failed to parse JSON: {}", e))?;
+
+        if let Some(first_result) = data.results.into_iter().next() {
+            let parts: Vec<&str> = first_result.title.splitn(2, " - ").collect();
+            let (artist, title) = if parts.len() == 2 {
+                (parts[0].to_string(), parts[1].to_string())
+            } else {
+                ("Unknown".to_string(), first_result.title)
+            };
+
+            Ok(ParsedDiscogsTrack {
+                artist: artist.trim().to_string(),
+                title: title.trim().to_string(),
+                year: first_result.year,
+            })
+        } else {
+            Err("No results found on Discogs.".to_string())
+        }
     } else {
         Err(format!("Discogs API returned error status: {}", response.status()))
     }
@@ -464,7 +495,7 @@ pub fn run() {
             add_track_to_set,
             get_tracks_in_set,
             seed_test_data,
-            search_discogs_test
+            search_discogs
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
