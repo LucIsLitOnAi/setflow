@@ -41,6 +41,22 @@ struct Track {
     location_id: Option<i32>,
 }
 
+#[derive(Serialize)]
+struct Set {
+    id: i32,
+    name: String,
+}
+
+#[derive(Serialize)]
+struct TrackInSet {
+    id: i32,
+    title: String,
+    artist: String,
+    format: String,
+    location_id: Option<i32>,
+    order_index: Option<i32>,
+}
+
 #[tauri::command]
 async fn add_location(app: tauri::AppHandle, name: String, location_type: String) -> Result<String, String> {
     let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
@@ -184,6 +200,113 @@ async fn delete_track(app: tauri::AppHandle, track_id: i32) -> Result<String, St
     Ok("Track deleted successfully".to_string())
 }
 
+#[tauri::command]
+async fn create_set(app: tauri::AppHandle, name: String) -> Result<String, String> {
+    let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let db_path = app_dir.join("database.sqlite");
+
+    let db_url = format!("sqlite:{}", db_path.to_string_lossy());
+    let pool = SqlitePoolOptions::new()
+        .connect(&db_url)
+        .await
+        .map_err(|e| format!("Failed to connect to db: {}", e))?;
+
+    sqlx::query("INSERT INTO sets (name) VALUES (?)")
+        .bind(name)
+        .execute(&pool)
+        .await
+        .map_err(|e| format!("Failed to create set: {}", e))?;
+
+    Ok("Set created successfully".to_string())
+}
+
+#[tauri::command]
+async fn get_sets(app: tauri::AppHandle) -> Result<Vec<Set>, String> {
+    let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let db_path = app_dir.join("database.sqlite");
+
+    let db_url = format!("sqlite:{}", db_path.to_string_lossy());
+    let pool = SqlitePoolOptions::new()
+        .connect(&db_url)
+        .await
+        .map_err(|e| format!("Failed to connect to db: {}", e))?;
+
+    let rows = sqlx::query("SELECT id, name FROM sets")
+        .fetch_all(&pool)
+        .await
+        .map_err(|e| format!("Failed to fetch sets: {}", e))?;
+
+    let mut sets = Vec::new();
+    for row in rows {
+        sets.push(Set {
+            id: row.get("id"),
+            name: row.get("name"),
+        });
+    }
+
+    Ok(sets)
+}
+
+#[tauri::command]
+async fn add_track_to_set(app: tauri::AppHandle, set_id: i32, track_id: i32, order_index: i32) -> Result<String, String> {
+    let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let db_path = app_dir.join("database.sqlite");
+
+    let db_url = format!("sqlite:{}", db_path.to_string_lossy());
+    let pool = SqlitePoolOptions::new()
+        .connect(&db_url)
+        .await
+        .map_err(|e| format!("Failed to connect to db: {}", e))?;
+
+    sqlx::query("INSERT INTO set_tracks (set_id, track_id, order_index) VALUES (?, ?, ?)")
+        .bind(set_id)
+        .bind(track_id)
+        .bind(order_index)
+        .execute(&pool)
+        .await
+        .map_err(|e| format!("Failed to add track to set: {}", e))?;
+
+    Ok("Track added to set successfully".to_string())
+}
+
+#[tauri::command]
+async fn get_tracks_in_set(app: tauri::AppHandle, set_id: i32) -> Result<Vec<TrackInSet>, String> {
+    let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let db_path = app_dir.join("database.sqlite");
+
+    let db_url = format!("sqlite:{}", db_path.to_string_lossy());
+    let pool = SqlitePoolOptions::new()
+        .connect(&db_url)
+        .await
+        .map_err(|e| format!("Failed to connect to db: {}", e))?;
+
+    let rows = sqlx::query(
+        "SELECT t.id, t.title, t.artist, t.format, t.location_id, st.order_index
+         FROM tracks t
+         INNER JOIN set_tracks st ON t.id = st.track_id
+         WHERE st.set_id = ?
+         ORDER BY st.order_index ASC"
+    )
+    .bind(set_id)
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| format!("Failed to fetch tracks in set: {}", e))?;
+
+    let mut tracks = Vec::new();
+    for row in rows {
+        tracks.push(TrackInSet {
+            id: row.get("id"),
+            title: row.get("title"),
+            artist: row.get("artist"),
+            format: row.get("format"),
+            location_id: row.get("location_id"),
+            order_index: row.get("order_index"),
+        });
+    }
+
+    Ok(tracks)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let migrations = vec![
@@ -209,6 +332,23 @@ pub fn run() {
                 FOREIGN KEY(location_id) REFERENCES locations(id)
             );",
             kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 3,
+            description: "create_sets_and_set_tracks_tables",
+            sql: "CREATE TABLE IF NOT EXISTS sets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS set_tracks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                set_id INTEGER NOT NULL,
+                track_id INTEGER NOT NULL,
+                order_index INTEGER,
+                FOREIGN KEY(set_id) REFERENCES sets(id) ON DELETE CASCADE,
+                FOREIGN KEY(track_id) REFERENCES tracks(id) ON DELETE CASCADE
+            );",
+            kind: MigrationKind::Up,
         }
     ];
 
@@ -224,7 +364,11 @@ pub fn run() {
             add_track,
             get_tracks,
             update_track_location,
-            delete_track
+            delete_track,
+            create_set,
+            get_sets,
+            add_track_to_set,
+            get_tracks_in_set
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
