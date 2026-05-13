@@ -1,0 +1,48 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --color-brand-green: #1a3c34;     /* Deep Forest */
+  --color-brand-moss: #5c6b3b;      /* Warm Moss Green */
+  --color-brand-sand: #fdf8f1;      /* Softer, Warmer Sand */
+  --color-brand-sand-dark: #f4ece1; /* Original Sand for accents */
+  --color-brand-blue: #e0f2fe;      /* Sky/Water accent */
+  --color-brand-earth: #7c4a32;     /* Warm Earth */
+  --color-brand-earth-deep: #5d3a1a;/* Deep Soil */
+
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+
+  /* Premium Typography Extensions */
+  --tracking-tighter: -0.05em;
+  --tracking-tight: -0.02em;
+
+  /* Transitions */
+  --transition-premium: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  :root {
+    background-color: var(--color-brand-sand);
+    color: var(--color-brand-green);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body { @apply font-sans; }
+  h1, h2, h3, h4 { @apply tracking-tighter leading-[0.95] font-light; }
+}
+
+@layer utilities {
+  .glass-warm {
+    @apply backdrop-blur-md bg-white/40 border border-white/30 shadow-sm;
+  }
+  .glass-moss {
+    @apply backdrop-blur-md bg-brand-moss/10 border border-brand-moss/20;
+  }
+  .animate-float {
+    animation: float 8s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
+}

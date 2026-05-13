@@ -1,0 +1,23 @@
+{
+  "testName": "Transformationstyp-Test",
+  "questions": [
+    { "id": 1, "text": "Wie erlebst du einen Moment akuter Überlastung?", "options": [
+      { "text": "Engegefühl in der Brust.", "type": "Fühlen" },
+      { "text": "Kopf rast, Suche nach Lösungen.", "type": "Struktur" },
+      { "text": "Roboter-Modus.", "type": "Tun" },
+      { "text": "Orientierungslosigkeit.", "type": "Intuition" }
+    ]},
+    { "id": 2, "text": "Was gibt dir Sicherheit?", "options": [
+      { "text": "Emotionaler Austausch.", "type": "Fühlen" },
+      { "text": "Klarer Plan.", "type": "Struktur" },
+      { "text": "Aufgaben erledigen.", "type": "Tun" },
+      { "text": "Innere Impulse.", "type": "Intuition" }
+    ]}
+  ],
+  "resultMapping": {
+    "Fühlen": { "title": "Typ Fühlen", "description": "Deine Kraft liegt in der Tiefe.", "cta": "Lass uns deinen Raum sicher machen." },
+    "Struktur": { "title": "Typ Struktur", "description": "Du brauchst Ordnung.", "cta": "Lass uns Klarheit schaffen." },
+    "Tun": { "title": "Typ Tun", "description": "Deine Energie fließt durch Handlung.", "cta": "Lass uns deine Kraft kanalisieren." },
+    "Intuition": { "title": "Typ Intuition", "description": "Vertraue deiner Weisheit.", "cta": "Verbinde dich mit deinem Kompass." }
+  }
+}
