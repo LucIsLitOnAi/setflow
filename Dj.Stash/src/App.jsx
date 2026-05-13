@@ -18,6 +18,10 @@ function App() {
   const [editingTrackId, setEditingTrackId] = useState(null);
   const [editFormData, setEditFormData] = useState({ artist: "", title: "", bpm: "", duration: "" });
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterFormat, setFilterFormat] = useState("all");
+  const [sortBy, setSortBy] = useState("added");
+
   const loadTracks = async () => {
     try {
       const dbTracks = await invoke("get_tracks");
@@ -227,6 +231,39 @@ function App() {
     }
   };
 
+  const filteredAndSortedTracks = tracks
+    .filter((track) => {
+      // 1. Search Filter (case-insensitive)
+      if (searchQuery) {
+        const queryLower = searchQuery.toLowerCase();
+        const matchesArtist = track.artist.toLowerCase().includes(queryLower);
+        const matchesTitle = track.title.toLowerCase().includes(queryLower);
+        if (!matchesArtist && !matchesTitle) return false;
+      }
+
+      // 2. Format Filter
+      if (filterFormat !== "all") {
+        if (track.format !== filterFormat) return false;
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      // 3. Sorting
+      if (sortBy === "artist") {
+        return a.artist.localeCompare(b.artist);
+      }
+      if (sortBy === "bpm") {
+        // null values go to the bottom
+        if (a.bpm === null && b.bpm === null) return 0;
+        if (a.bpm === null) return 1;
+        if (b.bpm === null) return -1;
+        return b.bpm - a.bpm;
+      }
+      // "added" is default, maintain array order (by id implicitly from DB)
+      return 0;
+    });
+
   const handleDigitalFileImport = async () => {
     try {
       const selectedPath = await open({
@@ -292,11 +329,35 @@ function App() {
           </div>
 
           <div id="library-panel" className="panel-content">
-            <div className="search-bar">
-              <input type="text" id="search-input" placeholder="SEARCH TRACKS..." />
+            <div className="search-bar" style={{ display: 'flex', gap: '10px', padding: '10px 0', borderBottom: '1px solid var(--color-border)' }}>
+              <input
+                type="text"
+                placeholder="SEARCH TRACKS..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ flex: 1, padding: '6px', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--color-border)', color: '#fff', outline: 'none', borderRadius: '4px' }}
+              />
+              <select
+                value={filterFormat}
+                onChange={(e) => setFilterFormat(e.target.value)}
+                style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid var(--color-border)', color: '#fff', padding: '6px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}
+              >
+                <option value="all">All Formats</option>
+                <option value="analog">Analog</option>
+                <option value="digital">Digital</option>
+              </select>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid var(--color-border)', color: '#fff', padding: '6px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}
+              >
+                <option value="added">Sort: Added</option>
+                <option value="artist">Sort: Artist</option>
+                <option value="bpm">Sort: BPM</option>
+              </select>
             </div>
             <div id="track-list" className="track-list">
-              {tracks.map((track) => (
+              {filteredAndSortedTracks.map((track) => (
                 <div key={track.id} style={{ display: 'flex', alignItems: 'center', padding: '10px', borderBottom: '1px solid var(--color-border)', background: 'rgba(0,0,0,0.2)' }}>
                   {track.cover_url ? (
                     <img src={track.cover_url} alt="Cover" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', marginRight: '15px' }} />
