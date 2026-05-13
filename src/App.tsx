@@ -5,10 +5,12 @@ import CoachingPage from './pages/CoachingPage';
 import ImpressumPage from './pages/ImpressumPage';
 import DatenschutzPage from './pages/DatenschutzPage';
 import Dashboard from './components/Dashboard';
+import { CustomCursor } from './components/CustomCursor';
 
 function App() {
   return (
     <BrowserRouter>
+      <CustomCursor />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/ueber-mich" element={<AboutPage />} />

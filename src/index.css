@@ -27,16 +27,37 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  body { @apply font-sans; }
-  h1, h2, h3, h4 { @apply tracking-tighter leading-[0.95] font-light; }
+  body {
+    @apply font-sans relative;
+  }
+  /* Film Grain Overlay */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 9999;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.025;
+  }
+
+  h1, h2, h3, h4 {
+    @apply tracking-tighter leading-[0.85] font-light;
+  }
 }
 
 @layer utilities {
   .glass-warm {
-    @apply backdrop-blur-md bg-white/40 border border-white/30 shadow-sm;
+    @apply backdrop-blur-md bg-white/40 border border-white/30 shadow-sm transition-all duration-700 ease-out;
+  }
+  .glass-warm:hover {
+    @apply shadow-[0_0_40px_-10px_var(--color-brand-earth)];
   }
   .glass-moss {
-    @apply backdrop-blur-md bg-brand-moss/10 border border-brand-moss/20;
+    @apply backdrop-blur-md bg-brand-moss/10 border border-brand-moss/20 transition-all duration-700 ease-out;
+  }
+  .glass-moss:hover {
+    @apply shadow-[0_0_40px_-10px_var(--color-brand-earth)];
   }
   .animate-float {
     animation: float 8s ease-in-out infinite;

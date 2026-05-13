@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import TransformationTest from '../components/TransformationTest';
 import { BentoGrid } from '../components/BentoGrid';
 import { PremiumButton } from '../components/PremiumButton';
@@ -8,6 +8,21 @@ import { Menu } from 'lucide-react';
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { scrollY } = useScroll();
+  const heroY = useTransform(scrollY, [0, 1000], [0, 250]);
+
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.2, delayChildren: 0.1 }
+    }
+  };
+
+  const fadeUp: any = {
+    hidden: { opacity: 0, y: 40 },
+    visible: { opacity: 1, y: 0, transition: { duration: 1, ease: "easeOut" } }
+  };
 
   return (
     <div className="min-h-screen bg-brand-sand">
@@ -20,46 +35,62 @@ export default function LandingPage() {
         </button>
       </nav>
 
-      <section className="relative pt-40 pb-24 px-6 min-h-[90vh] flex flex-col justify-center overflow-hidden">
+      <section className="relative pt-48 pb-32 px-6 min-h-[100vh] flex flex-col justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-brand-sand/40 to-brand-sand z-10" />
-          {/* Placeholder for Cinematic Nature Video */}
-          <div className="w-full h-full bg-brand-moss/20 object-cover opacity-30" />
+          <motion.div style={{ y: heroY }} className="w-full h-[120%] -top-[10%] relative bg-brand-moss/15 object-cover opacity-30" />
         </div>
 
-        <div className="max-w-4xl mx-auto relative z-10 text-center">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="mb-8">
-            <span className="px-6 py-2 rounded-full border border-brand-green/20 text-sm tracking-widest uppercase mb-8 inline-block glass-warm">Die heilsame Antithese</span>
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={staggerContainer}
+          className="max-w-5xl mx-auto relative z-10 text-center"
+        >
+          <motion.div variants={fadeUp} className="mb-10">
+            <span className="px-8 py-3 rounded-full border border-brand-green/20 text-xs md:text-sm tracking-[0.2em] uppercase mb-8 inline-block glass-warm">Die heilsame Antithese</span>
           </motion.div>
 
-          <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1 }} className="text-5xl md:text-7xl lg:text-8xl font-thin text-brand-green mb-6 md:mb-8 leading-[1.1] md:leading-[1.1]">
+          <motion.h1 variants={fadeUp} className="text-6xl sm:text-7xl md:text-8xl lg:text-[9rem] font-thin text-brand-green mb-8 md:mb-12">
             Ein geschützter Raum <br className="hidden md:block" />
-            <span className="italic opacity-80">für hochsensitive Menschen.</span>
+            <span className="italic opacity-70">für hochsensitive Menschen.</span>
           </motion.h1>
 
-          <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }} className="text-lg md:text-xl lg:text-2xl text-brand-green/80 mb-10 md:mb-12 font-light max-w-2xl mx-auto px-4 md:px-0">
-            Wärme und Nahbarkeit kombiniert mit High-End-Professionalität. <br className="hidden md:block" /> Krisenintervention & Nervensystem-Regulation in der Einzelbegleitung.
+          <motion.p variants={fadeUp} className="text-xl md:text-2xl lg:text-3xl text-brand-green/80 mb-12 md:mb-16 font-light max-w-3xl mx-auto px-4 md:px-0 leading-relaxed">
+            Wärme und Nahbarkeit kombiniert mit High-End-Professionalität. <br className="hidden lg:block" /> Krisenintervention & Nervensystem-Regulation in der Einzelbegleitung.
           </motion.p>
 
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }}>
+          <motion.div variants={fadeUp}>
              <PremiumButton href="#test">Transformationstyp entdecken</PremiumButton>
           </motion.div>
-        </div>
+        </motion.div>
       </section>
 
-      <section className="py-24 px-6 bg-brand-sand-dark">
-         <div className="max-w-4xl mx-auto text-center mb-16">
-           <h2 className="text-4xl font-thin mb-6">Wärme. Klarheit. Tiefe.</h2>
-           <p className="text-lg text-brand-green/70">Eine Begleitung, die direkt mit deinem Nervensystem arbeitet und dich aus der Überlastung in die Kraft führt.</p>
-         </div>
+      <section className="py-48 px-6 bg-brand-sand-dark relative overflow-hidden">
+         <motion.div
+           initial="hidden"
+           whileInView="visible"
+           viewport={{ once: true, margin: "-100px" }}
+           variants={staggerContainer}
+           className="max-w-5xl mx-auto text-center mb-24"
+         >
+           <motion.h2 variants={fadeUp} className="text-5xl md:text-6xl font-thin mb-8">Wärme. Klarheit. Tiefe.</motion.h2>
+           <motion.p variants={fadeUp} className="text-xl md:text-2xl text-brand-green/70 font-light max-w-2xl mx-auto leading-relaxed">Eine Begleitung, die direkt mit deinem Nervensystem arbeitet und dich aus der Überlastung in die Kraft führt.</motion.p>
+         </motion.div>
          <BentoGrid />
       </section>
 
-      <section id="test" className="py-32 px-6">
-        <div className="max-w-3xl mx-auto text-center mb-16">
-          <h2 className="text-5xl font-thin mb-6">Finde deinen Anker.</h2>
-          <p className="text-xl text-brand-green/70 font-light">Beantworte zwei einfache Fragen, um herauszufinden, wie dein Nervensystem auf Überlastung reagiert – und wie du zurück in deine Mitte findest.</p>
-        </div>
+      <section id="test" className="py-48 px-6 relative">
+        <motion.div
+           initial="hidden"
+           whileInView="visible"
+           viewport={{ once: true, margin: "-100px" }}
+           variants={staggerContainer}
+           className="max-w-4xl mx-auto text-center mb-24"
+        >
+          <motion.h2 variants={fadeUp} className="text-5xl md:text-7xl font-thin mb-8">Finde deinen Anker.</motion.h2>
+          <motion.p variants={fadeUp} className="text-xl md:text-2xl text-brand-green/70 font-light leading-relaxed max-w-3xl mx-auto">Beantworte zwei einfache Fragen, um herauszufinden, wie dein Nervensystem auf Überlastung reagiert – und wie du zurück in deine Mitte findest.</motion.p>
+        </motion.div>
         <TransformationTest />
       </section>
 
