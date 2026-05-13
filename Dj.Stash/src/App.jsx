@@ -8,6 +8,8 @@ function App() {
   const [errorMsg, setErrorMsg] = useState("");
   const [tracks, setTracks] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [sets, setSets] = useState([]);
+  const [newSetName, setNewSetName] = useState("");
 
   const loadTracks = async () => {
     try {
@@ -32,9 +34,19 @@ function App() {
     }
   };
 
+  const loadSets = async () => {
+    try {
+      const dbSets = await invoke("get_sets");
+      setSets(dbSets);
+    } catch (error) {
+      console.error("Error loading sets:", error);
+    }
+  };
+
   useEffect(() => {
     loadTracks();
     loadLocations();
+    loadSets();
   }, []);
 
   const handleDiscogsSearch = async () => {
@@ -78,6 +90,17 @@ function App() {
       await loadTracks();
     } catch (error) {
       console.error("Error updating track location:", error);
+    }
+  };
+
+  const handleCreateSet = async () => {
+    if (!newSetName.trim()) return;
+    try {
+      await invoke("create_set", { name: newSetName });
+      setNewSetName("");
+      await loadSets();
+    } catch (error) {
+      console.error("Error creating set:", error);
     }
   };
 
@@ -261,6 +284,44 @@ function App() {
                 <button className="btn btn-primary" onClick={handleDigitalFileImport} style={{ width: '100%' }}>
                   ADD DIGITAL FILE
                 </button>
+              </div>
+
+              <div style={{ marginTop: '30px', borderTop: '1px solid var(--color-border)', paddingTop: '20px' }}>
+                <h3 style={{ color: 'var(--color-accent-steel)', marginBottom: '10px' }}>SET MANAGEMENT</h3>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                  <input
+                    type="text"
+                    value={newSetName}
+                    onChange={(e) => setNewSetName(e.target.value)}
+                    placeholder="Enter Set Name..."
+                    style={{ flex: 1, padding: '8px', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--color-border)', color: '#fff' }}
+                  />
+                  <button className="btn btn-primary" onClick={handleCreateSet}>CREATE SET</button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {sets.map(set => (
+                    <div
+                      key={set.id}
+                      onClick={() => console.log("Set geklickt:", set.id)}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--color-border)',
+                        color: '#fff',
+                        padding: '12px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        transition: 'background 0.2s'
+                      }}
+                    >
+                      <span style={{ fontWeight: 'bold' }}>{set.name}</span>
+                      <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>ID: {set.id}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
