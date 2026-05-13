@@ -1,6 +1,23 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 
 function App() {
+  useEffect(() => {
+    const fetchBackendData = async () => {
+      try {
+        const locations = await invoke("get_locations");
+        console.log("Fetched locations from backend:", locations);
+
+        const sets = await invoke("get_sets");
+        console.log("Fetched sets from backend:", sets);
+      } catch (error) {
+        console.error("Error communicating with backend:", error);
+      }
+    };
+
+    fetchBackendData();
+  }, []);
+
   return (
     <>
       <div className="grain-overlay"></div>
