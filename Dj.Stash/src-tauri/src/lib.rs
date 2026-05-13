@@ -63,6 +63,8 @@ struct Track {
     location_id: Option<i32>,
     cover_url: Option<String>,
     file_path: Option<String>,
+    bpm: Option<i32>,
+    duration: Option<i32>,
 }
 
 #[derive(Serialize)]
@@ -81,6 +83,8 @@ struct TrackInSet {
     order_index: Option<i32>,
     cover_url: Option<String>,
     file_path: Option<String>,
+    bpm: Option<i32>,
+    duration: Option<i32>,
 }
 
 #[tauri::command]
@@ -133,7 +137,7 @@ async fn get_locations(app: tauri::AppHandle) -> Result<Vec<Location>, String> {
 }
 
 #[tauri::command]
-async fn add_track(app: tauri::AppHandle, title: String, artist: String, format: String, location_id: Option<i32>, cover_url: Option<String>, file_path: Option<String>) -> Result<String, String> {
+async fn add_track(app: tauri::AppHandle, title: String, artist: String, format: String, location_id: Option<i32>, cover_url: Option<String>, file_path: Option<String>, bpm: Option<i32>, duration: Option<i32>) -> Result<String, String> {
     let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let db_path = app_dir.join("database.sqlite");
 
@@ -143,13 +147,15 @@ async fn add_track(app: tauri::AppHandle, title: String, artist: String, format:
         .await
         .map_err(|e| format!("Failed to connect to db: {}", e))?;
 
-    sqlx::query("INSERT INTO tracks (title, artist, format, location_id, cover_url, file_path) VALUES (?, ?, ?, ?, ?, ?)")
+    sqlx::query("INSERT INTO tracks (title, artist, format, location_id, cover_url, file_path, bpm, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(title)
         .bind(artist)
         .bind(format)
         .bind(location_id)
         .bind(cover_url)
         .bind(file_path)
+        .bind(bpm)
+        .bind(duration)
         .execute(&pool)
         .await
         .map_err(|e| format!("Failed to insert track: {}", e))?;
@@ -168,7 +174,7 @@ async fn get_tracks(app: tauri::AppHandle) -> Result<Vec<Track>, String> {
         .await
         .map_err(|e| format!("Failed to connect to db: {}", e))?;
 
-    let rows = sqlx::query("SELECT id, title, artist, format, location_id, cover_url, file_path FROM tracks")
+    let rows = sqlx::query("SELECT id, title, artist, format, location_id, cover_url, file_path, bpm, duration FROM tracks")
         .fetch_all(&pool)
         .await
         .map_err(|e| format!("Failed to fetch tracks: {}", e))?;
@@ -183,6 +189,8 @@ async fn get_tracks(app: tauri::AppHandle) -> Result<Vec<Track>, String> {
             location_id: row.get("location_id"),
             cover_url: row.get("cover_url"),
             file_path: row.get("file_path"),
+            bpm: row.get("bpm"),
+            duration: row.get("duration"),
         });
     }
 
@@ -445,7 +453,7 @@ async fn get_tracks_in_set(app: tauri::AppHandle, set_id: i32) -> Result<Vec<Tra
         .map_err(|e| format!("Failed to connect to db: {}", e))?;
 
     let rows = sqlx::query(
-        "SELECT t.id, t.title, t.artist, t.format, t.location_id, t.cover_url, t.file_path, st.order_index
+        "SELECT t.id, t.title, t.artist, t.format, t.location_id, t.cover_url, t.file_path, t.bpm, t.duration, st.order_index
          FROM tracks t
          INNER JOIN set_tracks st ON t.id = st.track_id
          WHERE st.set_id = ?
@@ -467,6 +475,8 @@ async fn get_tracks_in_set(app: tauri::AppHandle, set_id: i32) -> Result<Vec<Tra
             order_index: row.get("order_index"),
             cover_url: row.get("cover_url"),
             file_path: row.get("file_path"),
+            bpm: row.get("bpm"),
+            duration: row.get("duration"),
         });
     }
 
@@ -526,6 +536,13 @@ pub fn run() {
             version: 5,
             description: "add_file_path_to_tracks",
             sql: "ALTER TABLE tracks ADD COLUMN file_path TEXT;",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 6,
+            description: "add_bpm_and_duration_to_tracks",
+            sql: "ALTER TABLE tracks ADD COLUMN bpm INTEGER;
+                  ALTER TABLE tracks ADD COLUMN duration INTEGER;",
             kind: MigrationKind::Up,
         }
     ];

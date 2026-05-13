@@ -90,6 +90,8 @@ function App() {
         locationId: null,
         coverUrl: parsedTrack.cover_url || null,
         filePath: null,
+        bpm: null,
+        duration: null,
       });
       setQuery("");
       setParsedTrack(null);
@@ -99,6 +101,18 @@ function App() {
       console.error("Error saving track:", error);
       setErrorMsg(`Save Error: ${error}`);
     }
+  };
+
+  const formatDuration = (totalSeconds) => {
+    if (!totalSeconds) return "--:--";
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+
+    if (hrs > 0) {
+      return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handleLocationChange = async (trackId, newLocationIdStr) => {
@@ -202,7 +216,9 @@ function App() {
           format: "digital",
           locationId: null,
           coverUrl: null,
-          filePath: selectedPath
+          filePath: selectedPath,
+          bpm: null,
+          duration: null,
         });
 
         alert(`Digital track '${title}' saved successfully!`);
@@ -248,7 +264,12 @@ function App() {
                   )}
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 'bold', color: 'var(--color-text-main)' }}>{track.title}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{track.artist}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                      {track.artist}
+                      <span style={{ marginLeft: '10px', color: 'rgba(255,255,255,0.4)' }}>
+                        BPM: {track.bpm || '--'} | {track.duration ? formatDuration(track.duration) : '--:--'}
+                      </span>
+                    </div>
                   </div>
                   <div style={{ marginRight: '15px' }}>
                     <select
@@ -389,9 +410,12 @@ function App() {
 
               {selectedSet ? (
                 <div style={{ marginTop: '30px', borderTop: '1px solid var(--color-border)', paddingTop: '20px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                     <h3 style={{ color: 'var(--color-accent-steel)', margin: 0 }}>SET: {selectedSet.name}</h3>
                     <button className="btn b-out" onClick={closeSetDetail} style={{ padding: '4px 8px', fontSize: '11px' }}>BACK</button>
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '15px' }}>
+                    Tracks: {activeSetTracks.length} | Dauer: {formatDuration(activeSetTracks.reduce((acc, curr) => acc + (curr.duration || 0), 0))}
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -431,7 +455,12 @@ function App() {
                           )}
                           <div style={{ flex: 1, overflow: 'hidden' }}>
                             <div style={{ fontWeight: 'bold', color: 'var(--color-text-main)', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{track.title}</div>
-                            <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{track.artist}</div>
+                            <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {track.artist}
+                              <span style={{ marginLeft: '6px', color: 'rgba(255,255,255,0.4)' }}>
+                                BPM: {track.bpm || '--'} | {track.duration ? formatDuration(track.duration) : '--:--'}
+                              </span>
+                            </div>
                           </div>
                           <div>
                             <span className="badge" style={{ fontSize: '8px', padding: '2px 4px' }}>{track.format.toUpperCase()}</span>
