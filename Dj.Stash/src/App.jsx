@@ -26,6 +26,9 @@ function App() {
 
   const [exportSuccess, setExportSuccess] = useState(false);
 
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [accentColor, setAccentColor] = useState('#ff0055');
+
   const [searchQuery, setSearchQuery] = useState("");
   const [filterFormat, setFilterFormat] = useState("all");
   const [sortBy, setSortBy] = useState("added");
@@ -369,14 +372,36 @@ function App() {
   };
 
   return (
-    <>
+    <div style={{
+      '--bg-color': isDarkMode ? '#121212' : '#f5f5f5',
+      '--text-color': isDarkMode ? '#ffffff' : '#000000',
+      '--panel-bg': isDarkMode ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.8)',
+      '--accent-color': accentColor,
+      minHeight: '100vh',
+      background: 'var(--bg-color)',
+      color: 'var(--text-color)',
+      transition: 'background 0.3s ease, color 0.3s ease'
+    }}>
       <div className="grain-overlay"></div>
       <div id="app" className="shell">
         {/* ── LEFT ZONE: Library & Vinyl ── */}
         <section className="zone-left">
           <header className="app-header">
             <div className="logo-text">SETFLOW <span className="badge">COLLAB</span></div>
-            <div className="top-bar-right">
+            <div className="top-bar-right" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                style={{ background: 'transparent', border: '1px solid var(--color-border)', borderRadius: '4px', cursor: 'pointer', fontSize: '16px', padding: '4px' }}
+              >
+                {isDarkMode ? '☀️' : '🌙'}
+              </button>
+              <input
+                type="color"
+                value={accentColor}
+                onChange={(e) => setAccentColor(e.target.value)}
+                style={{ width: '30px', height: '30px', padding: '0', border: 'none', borderRadius: '4px', cursor: 'pointer', background: 'transparent' }}
+                title="Accent Color"
+              />
               <button id="upgrade-btn" className="btn b-out">UPGRADE</button>
               <div id="pro-badge" className="status-badge" style={{ display: 'none' }}>PRO</div>
               <div id="connection-status" className="status-badge">OFFLINE</div>
@@ -395,12 +420,12 @@ function App() {
                 placeholder="SEARCH TRACKS..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ flex: 1, padding: '6px', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--color-border)', color: '#fff', outline: 'none', borderRadius: '4px' }}
+                style={{ flex: 1, padding: '6px', background: 'var(--panel-bg)', border: '1px solid var(--color-border)', color: 'var(--text-color)', outline: 'none', borderRadius: '4px' }}
               />
               <select
                 value={filterFormat}
                 onChange={(e) => setFilterFormat(e.target.value)}
-                style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid var(--color-border)', color: '#fff', padding: '6px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}
+                style={{ background: 'var(--panel-bg)', border: '1px solid var(--color-border)', color: 'var(--text-color)', padding: '6px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}
               >
                 <option value="all">All Formats</option>
                 <option value="analog">Analog</option>
@@ -409,7 +434,7 @@ function App() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid var(--color-border)', color: '#fff', padding: '6px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}
+                style={{ background: 'var(--panel-bg)', border: '1px solid var(--color-border)', color: 'var(--text-color)', padding: '6px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}
               >
                 <option value="added">Sort: Added</option>
                 <option value="artist">Sort: Artist</option>
@@ -418,12 +443,12 @@ function App() {
             </div>
             <div id="track-list" className="track-list">
               {filteredAndSortedTracks.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '30px', color: 'rgba(255,255,255,0.5)', fontSize: '13px', fontStyle: 'italic' }}>
+                <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-color)', opacity: 0.5, fontSize: '13px', fontStyle: 'italic' }}>
                   Keine Tracks gefunden. Füge Musik hinzu oder passe deine Suche an.
                 </div>
               ) : (
                 filteredAndSortedTracks.map((track) => (
-                <div key={track.id} style={{ display: 'flex', alignItems: 'center', padding: '10px', borderBottom: '1px solid var(--color-border)', background: 'rgba(0,0,0,0.2)' }}>
+                <div key={track.id} style={{ display: 'flex', alignItems: 'center', padding: '10px', borderBottom: '1px solid var(--color-border)', background: 'var(--panel-bg)' }}>
                   {track.cover_url ? (
                     <img src={track.cover_url} alt="Cover" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', marginRight: '15px' }} />
                   ) : (
@@ -433,9 +458,9 @@ function App() {
                     {track.format === "digital" && track.file_path && (
                       <div
                         onClick={() => handlePlayPause(track)}
-                              style={{ cursor: 'pointer', marginRight: '10px', fontSize: '16px', transition: 'all 0.2s ease', opacity: 0.8 }}
-                              onMouseOver={(e) => e.currentTarget.style.opacity = 1}
-                              onMouseOut={(e) => e.currentTarget.style.opacity = 0.8}
+                        style={{ cursor: 'pointer', marginRight: '10px', fontSize: '16px', transition: 'all 0.2s ease', opacity: 0.8 }}
+                        onMouseOver={(e) => e.currentTarget.style.opacity = 1}
+                        onMouseOut={(e) => e.currentTarget.style.opacity = 0.8}
                       >
                         {playingTrackId === track.id ? '⏸️' : '▶️'}
                       </div>
@@ -448,7 +473,7 @@ function App() {
                           value={editFormData.title}
                           onChange={(e) => handleEditChange('title', e.target.value)}
                           placeholder="Title"
-                          style={{ background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderBottom: '1px solid var(--color-accent-steel)', outline: 'none', fontSize: '12px', fontWeight: 'bold' }}
+                          style={{ background: 'var(--bg-color)', color: 'var(--text-color)', border: 'none', borderBottom: '1px solid var(--accent-color)', outline: 'none', fontSize: '12px', fontWeight: 'bold' }}
                         />
                         <div style={{ display: 'flex', gap: '8px', fontSize: '11px' }}>
                           <input
@@ -456,21 +481,21 @@ function App() {
                             value={editFormData.artist}
                             onChange={(e) => handleEditChange('artist', e.target.value)}
                             placeholder="Artist"
-                            style={{ flex: 1, background: 'rgba(0,0,0,0.5)', color: 'var(--color-text-muted)', border: 'none', borderBottom: '1px solid var(--color-accent-steel)', outline: 'none' }}
+                            style={{ flex: 1, background: 'var(--bg-color)', color: 'var(--text-color)', opacity: 0.8, border: 'none', borderBottom: '1px solid var(--accent-color)', outline: 'none' }}
                           />
                           <input
                             type="number"
                             value={editFormData.bpm}
                             onChange={(e) => handleEditChange('bpm', e.target.value)}
                             placeholder="BPM"
-                            style={{ width: '45px', background: 'rgba(0,0,0,0.5)', color: 'rgba(255,255,255,0.4)', border: 'none', borderBottom: '1px solid var(--color-accent-steel)', outline: 'none' }}
+                            style={{ width: '45px', background: 'var(--bg-color)', color: 'var(--text-color)', opacity: 0.6, border: 'none', borderBottom: '1px solid var(--accent-color)', outline: 'none' }}
                           />
                           <input
                             type="number"
                             value={editFormData.duration}
                             onChange={(e) => handleEditChange('duration', e.target.value)}
                             placeholder="Sec"
-                            style={{ width: '45px', background: 'rgba(0,0,0,0.5)', color: 'rgba(255,255,255,0.4)', border: 'none', borderBottom: '1px solid var(--color-accent-steel)', outline: 'none' }}
+                            style={{ width: '45px', background: 'var(--bg-color)', color: 'var(--text-color)', opacity: 0.6, border: 'none', borderBottom: '1px solid var(--accent-color)', outline: 'none' }}
                           />
                         </div>
                       </div>
@@ -479,7 +504,7 @@ function App() {
                         <div style={{ fontWeight: 'bold', color: 'var(--color-text-main)' }}>{track.title}</div>
                         <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
                           {track.artist}
-                          <span style={{ marginLeft: '10px', color: 'rgba(255,255,255,0.4)' }}>
+                          <span style={{ marginLeft: '10px', color: 'var(--text-color)', opacity: 0.4 }}>
                             BPM: {track.bpm || '--'} | {track.duration ? formatDuration(track.duration) : '--:--'}
                           </span>
                         </div>
@@ -492,9 +517,9 @@ function App() {
                       value={track.location_id || ""}
                       onChange={(e) => handleLocationChange(track.id, e.target.value)}
                       style={{
-                        background: 'rgba(0,0,0,0.5)',
+                        background: 'var(--panel-bg)',
                         border: '1px solid var(--color-border)',
-                        color: 'var(--color-text-main)',
+                        color: 'var(--text-color)',
                         padding: '4px 8px',
                         fontSize: '11px',
                         borderRadius: '4px',
@@ -517,7 +542,7 @@ function App() {
                     {editingTrackId === track.id ? (
                       <button
                         onClick={saveEdit}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--color-accent-steel)', cursor: 'pointer', fontSize: '16px' }}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--accent-color)', cursor: 'pointer', fontSize: '16px' }}
                         title="Save"
                       >
                         💾
@@ -525,7 +550,7 @@ function App() {
                     ) : (
                       <button
                         onClick={() => startEditing(track)}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '14px' }}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-color)', opacity: 0.6, cursor: 'pointer', fontSize: '14px' }}
                         title="Edit"
                       >
                         ✏️
@@ -536,8 +561,8 @@ function App() {
                         onClick={() => handleAddTrackToSet(track.id)}
                         style={{
                           background: 'transparent',
-                          border: '1px solid var(--color-accent-steel)',
-                          color: 'var(--color-accent-steel)',
+                          border: '1px solid var(--accent-color)',
+                          color: 'var(--accent-color)',
                           width: '28px',
                           height: '28px',
                           borderRadius: '50%',
@@ -551,12 +576,12 @@ function App() {
                           transition: 'background 0.2s, color 0.2s'
                         }}
                         onMouseOver={(e) => {
-                          e.target.style.background = 'var(--color-accent-steel)';
-                          e.target.style.color = '#000';
+                          e.target.style.background = 'var(--accent-color)';
+                          e.target.style.color = 'var(--bg-color)';
                         }}
                         onMouseOut={(e) => {
                           e.target.style.background = 'transparent';
-                          e.target.style.color = 'var(--color-accent-steel)';
+                          e.target.style.color = 'var(--accent-color)';
                         }}
                       >
                         +
@@ -597,18 +622,18 @@ function App() {
 
         {/* ── RIGHT ZONE: Detail Panel ── */}
         <section id="pnl" className="zone-right">
-          <div id="pi" className="panel-inner">
+          <div id="pi" className="panel-inner" style={{ background: 'var(--panel-bg)', color: 'var(--text-color)' }}>
             <div style={{ padding: '20px' }}>
-              <h3 style={{ color: 'var(--color-accent-steel)', marginBottom: '10px' }}>DISCOGS TEST SEARCH</h3>
+              <h3 style={{ color: 'var(--accent-color)', marginBottom: '10px' }}>DISCOGS TEST SEARCH</h3>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <input
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Enter Barcode / Title..."
-                  style={{ flex: 1, padding: '8px', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--color-border)', color: '#fff' }}
+                  style={{ flex: 1, padding: '8px', background: 'var(--bg-color)', border: '1px solid var(--color-border)', color: 'var(--text-color)', outline: 'none' }}
                 />
-                <button className="btn btn-primary" onClick={handleDiscogsSearch}>SEARCH</button>
+                <button className="btn btn-primary" onClick={handleDiscogsSearch} style={{ background: 'var(--accent-color)', color: 'var(--bg-color)', border: 'none' }}>SEARCH</button>
               </div>
               {errorMsg && (
                 <div style={{ color: 'red', marginBottom: '10px', fontSize: '12px' }}>
@@ -616,7 +641,7 @@ function App() {
                 </div>
               )}
               {parsedTrack && (
-                <div style={{ background: 'rgba(0,0,0,0.7)', padding: '15px', border: '1px solid var(--color-border)', borderRadius: '4px' }}>
+                <div style={{ background: 'var(--bg-color)', padding: '15px', border: '1px solid var(--color-border)', borderRadius: '4px' }}>
                   {parsedTrack.cover_url && (
                     <img
                       src={parsedTrack.cover_url}
@@ -624,19 +649,19 @@ function App() {
                       style={{ maxWidth: '150px', marginBottom: '10px', display: 'block', borderRadius: '4px' }}
                     />
                   )}
-                  <div style={{ marginBottom: '10px', color: '#fff' }}>
+                  <div style={{ marginBottom: '10px', color: 'var(--text-color)' }}>
                     <strong>Artist:</strong> {parsedTrack.artist} <br/>
                     <strong>Title:</strong> {parsedTrack.title} <br/>
                     <strong>Year:</strong> {parsedTrack.year || "N/A"}
                   </div>
-                  <button className="btn btn-primary" onClick={saveTrack} style={{ width: '100%' }}>
+                  <button className="btn btn-primary" onClick={saveTrack} style={{ width: '100%', background: 'var(--accent-color)', color: 'var(--bg-color)', border: 'none' }}>
                     SAVE TO DB
                   </button>
                 </div>
               )}
 
               <div style={{ marginTop: '30px' }}>
-                <button className="btn btn-primary" onClick={handleDigitalFileImport} style={{ width: '100%' }}>
+                <button className="btn btn-primary" onClick={handleDigitalFileImport} style={{ width: '100%', background: 'var(--accent-color)', color: 'var(--bg-color)', border: 'none' }}>
                   ADD DIGITAL FILE
                 </button>
               </div>
@@ -644,19 +669,19 @@ function App() {
               {selectedSet ? (
                 <div style={{ marginTop: '30px', borderTop: '1px solid var(--color-border)', paddingTop: '20px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                    <h3 style={{ color: 'var(--color-accent-steel)', margin: 0 }}>SET: {selectedSet.name}</h3>
+                    <h3 style={{ color: 'var(--accent-color)', margin: 0 }}>SET: {selectedSet.name}</h3>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button
                         className="btn b-out"
                         onClick={handleExportSet}
-                        style={{ padding: '4px 8px', fontSize: '11px', transition: 'all 0.2s ease', backgroundColor: exportSuccess ? 'rgba(0,255,0,0.2)' : 'transparent', color: exportSuccess ? '#fff' : 'inherit' }}
+                        style={{ padding: '4px 8px', fontSize: '11px', transition: 'all 0.2s ease', backgroundColor: exportSuccess ? 'var(--accent-color)' : 'transparent', color: exportSuccess ? 'var(--bg-color)' : 'var(--text-color)', borderColor: 'var(--accent-color)' }}
                       >
                         {exportSuccess ? "Erfolgreich exportiert! ✅" : "EXPORT SET"}
                       </button>
-                      <button className="btn b-out" onClick={closeSetDetail} style={{ padding: '4px 8px', fontSize: '11px', transition: 'all 0.2s ease' }}>BACK</button>
+                      <button className="btn b-out" onClick={closeSetDetail} style={{ padding: '4px 8px', fontSize: '11px', transition: 'all 0.2s ease', color: 'var(--text-color)', borderColor: 'var(--accent-color)' }}>BACK</button>
                     </div>
                   </div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '15px' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-color)', opacity: 0.6, marginBottom: '15px' }}>
                     Tracks: {activeSetTracks.length} | Dauer: {formatDuration(activeSetTracks.reduce((acc, curr) => acc + (curr.duration || 0), 0))} | Ø BPM: {
                       (() => {
                         const bpmTracks = activeSetTracks.filter(t => t.bpm && t.bpm > 0);
@@ -674,7 +699,7 @@ function App() {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {activeSetTracks.length === 0 ? (
-                      <div style={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: '20px', fontSize: '12px', fontStyle: 'italic' }}>
+                      <div style={{ color: 'var(--text-color)', opacity: 0.5, textAlign: 'center', padding: '20px', fontSize: '12px', fontStyle: 'italic' }}>
                         Dieses Set ist noch leer. Klicke auf das '+' in deiner Bibliothek, um Tracks hinzuzufügen.
                       </div>
                     ) : (
@@ -688,29 +713,29 @@ function App() {
                           style={{
                             display: 'flex',
                             alignItems: 'center',
-                            background: 'rgba(0,0,0,0.3)',
+                            background: 'var(--bg-color)',
                             padding: '6px',
                             borderRadius: '4px',
                             border: '1px solid var(--color-border)',
                             transition: 'border 0.2s',
                           }}
-                          onDragEnter={(e) => e.currentTarget.style.border = '1px dashed var(--color-accent-steel)'}
+                          onDragEnter={(e) => e.currentTarget.style.border = '1px dashed var(--accent-color)'}
                           onDragLeave={(e) => e.currentTarget.style.border = '1px solid var(--color-border)'}
                           onDropCapture={(e) => e.currentTarget.style.border = '1px solid var(--color-border)'}
                         >
                           <div
                             onClick={() => handleRemoveTrackFromSet(track.id)}
-                            style={{ color: 'var(--color-text-muted)', cursor: 'pointer', padding: '0 6px', fontSize: '12px', fontWeight: 'bold', transition: 'all 0.2s ease' }}
+                            style={{ color: 'var(--text-color)', opacity: 0.6, cursor: 'pointer', padding: '0 6px', fontSize: '12px', fontWeight: 'bold', transition: 'all 0.2s ease' }}
                             title="Remove track"
                             onMouseOver={(e) => { e.currentTarget.style.color = '#ff4444'; e.currentTarget.style.transform = 'scale(1.2)'; }}
-                            onMouseOut={(e) => { e.currentTarget.style.color = 'var(--color-text-muted)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-color)'; e.currentTarget.style.transform = 'scale(1)'; }}
                           >
                             X
                           </div>
-                          <div style={{ cursor: 'grab', color: 'var(--color-text-muted)', padding: '0 8px', fontSize: '14px', userSelect: 'none' }}>
+                          <div style={{ cursor: 'grab', color: 'var(--text-color)', opacity: 0.5, padding: '0 8px', fontSize: '14px', userSelect: 'none' }}>
                             ≡
                           </div>
-                          <div style={{ fontSize: '10px', color: 'var(--color-accent-steel)', width: '20px', textAlign: 'center', fontWeight: 'bold', marginRight: '6px' }}>
+                          <div style={{ fontSize: '10px', color: 'var(--accent-color)', width: '20px', textAlign: 'center', fontWeight: 'bold', marginRight: '6px' }}>
                             {index + 1}.
                           </div>
                           {track.cover_url ? (
@@ -721,7 +746,7 @@ function App() {
                           {track.format === "digital" && track.file_path && (
                             <div
                               onClick={() => handlePlayPause(track)}
-                              style={{ cursor: 'pointer', marginRight: '8px', fontSize: '14px', transition: 'all 0.2s ease', opacity: 0.8 }}
+                              style={{ cursor: 'pointer', marginRight: '8px', fontSize: '14px', transition: 'all 0.2s ease', opacity: 0.8, color: 'var(--accent-color)' }}
                               onMouseOver={(e) => e.currentTarget.style.opacity = 1}
                               onMouseOut={(e) => e.currentTarget.style.opacity = 0.8}
                             >
@@ -729,16 +754,16 @@ function App() {
                             </div>
                           )}
                           <div style={{ flex: 1, overflow: 'hidden' }}>
-                            <div style={{ fontWeight: 'bold', color: 'var(--color-text-main)', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{track.title}</div>
-                            <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ fontWeight: 'bold', color: 'var(--text-color)', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{track.title}</div>
+                            <div style={{ fontSize: '10px', color: 'var(--text-color)', opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {track.artist}
-                              <span style={{ marginLeft: '6px', color: 'rgba(255,255,255,0.4)' }}>
+                              <span style={{ marginLeft: '6px', color: 'var(--text-color)', opacity: 0.4 }}>
                                 BPM: {track.bpm || '--'} | {track.duration ? formatDuration(track.duration) : '--:--'}
                               </span>
                             </div>
                           </div>
                           <div>
-                            <span className="badge" style={{ fontSize: '8px', padding: '2px 4px' }}>{track.format.toUpperCase()}</span>
+                            <span className="badge" style={{ fontSize: '8px', padding: '2px 4px', background: 'var(--accent-color)', color: 'var(--bg-color)', border: 'none' }}>{track.format.toUpperCase()}</span>
                           </div>
                         </div>
                       ))
@@ -747,16 +772,16 @@ function App() {
                 </div>
               ) : (
                 <div style={{ marginTop: '30px', borderTop: '1px solid var(--color-border)', paddingTop: '20px' }}>
-                  <h3 style={{ color: 'var(--color-accent-steel)', marginBottom: '10px' }}>SET MANAGEMENT</h3>
+                  <h3 style={{ color: 'var(--accent-color)', marginBottom: '10px' }}>SET MANAGEMENT</h3>
                   <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                     <input
                       type="text"
                       value={newSetName}
                       onChange={(e) => setNewSetName(e.target.value)}
                       placeholder="Enter Set Name..."
-                      style={{ flex: 1, padding: '8px', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--color-border)', color: '#fff' }}
+                      style={{ flex: 1, padding: '8px', background: 'var(--bg-color)', border: '1px solid var(--color-border)', color: 'var(--text-color)', outline: 'none' }}
                     />
-                    <button className="btn btn-primary" onClick={handleCreateSet}>CREATE SET</button>
+                    <button className="btn btn-primary" onClick={handleCreateSet} style={{ background: 'var(--accent-color)', color: 'var(--bg-color)', border: 'none' }}>CREATE SET</button>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -765,22 +790,22 @@ function App() {
                         key={set.id}
                         onClick={() => openSetDetail(set)}
                         style={{
-                          background: 'rgba(255, 255, 255, 0.05)',
+                          background: 'var(--bg-color)',
                           border: '1px solid var(--color-border)',
-                          color: '#fff',
+                          color: 'var(--text-color)',
                           padding: '12px',
                           borderRadius: '6px',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          transition: 'background 0.2s'
+                          transition: 'all 0.2s ease'
                         }}
-                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-                        onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+                        onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--accent-color)'; e.currentTarget.style.transform = 'translateY(-2px)'}}
+                        onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.transform = 'translateY(0)'}}
                       >
                         <span style={{ fontWeight: 'bold' }}>{set.name}</span>
-                        <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>ID: {set.id}</span>
+                        <span style={{ fontSize: '10px', opacity: 0.5 }}>ID: {set.id}</span>
                       </div>
                     ))}
                   </div>
@@ -791,7 +816,7 @@ function App() {
         </section>
       </div>
       <audio ref={audioRef} onEnded={() => setPlayingTrackId(null)} style={{ display: 'none' }} />
-    </>
+    </div>
   );
 }
 
