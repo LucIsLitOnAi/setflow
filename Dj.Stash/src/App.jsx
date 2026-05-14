@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { save } from "@tauri-apps/plugin-dialog";
@@ -19,6 +20,9 @@ function App() {
 
   const [editingTrackId, setEditingTrackId] = useState(null);
   const [editFormData, setEditFormData] = useState({ artist: "", title: "", bpm: "", duration: "" });
+
+  const [playingTrackId, setPlayingTrackId] = useState(null);
+  const audioRef = useRef(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterFormat, setFilterFormat] = useState("all");
@@ -132,6 +136,19 @@ function App() {
       await loadTracks();
     } catch (error) {
       console.error("Error updating track location:", error);
+    }
+  };
+
+  const handlePlayPause = (track) => {
+    if (playingTrackId === track.id) {
+      audioRef.current.pause();
+      setPlayingTrackId(null);
+    } else {
+      if (!track.file_path) return;
+      const assetUrl = convertFileSrc(track.file_path);
+      audioRef.current.src = assetUrl;
+      audioRef.current.play().catch(e => console.error("Error playing audio:", e));
+      setPlayingTrackId(track.id);
     }
   };
 
@@ -401,7 +418,16 @@ function App() {
                   ) : (
                     <div style={{ width: '40px', height: '40px', background: 'var(--color-bg-deep)', borderRadius: '4px', marginRight: '15px', border: '1px dashed var(--color-border)' }}></div>
                   )}
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                    {track.format === "digital" && track.file_path && (
+                      <div
+                        onClick={() => handlePlayPause(track)}
+                        style={{ cursor: 'pointer', marginRight: '10px', fontSize: '16px' }}
+                      >
+                        {playingTrackId === track.id ? '⏸️' : '▶️'}
+                      </div>
+                    )}
+                    <div style={{ flex: 1 }}>
                     {editingTrackId === track.id ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingRight: '10px' }}>
                         <input
@@ -446,6 +472,7 @@ function App() {
                         </div>
                       </>
                     )}
+                    </div>
                   </div>
                   <div style={{ marginRight: '15px' }}>
                     <select
@@ -670,6 +697,14 @@ function App() {
                           ) : (
                             <div style={{ width: '24px', height: '24px', background: 'var(--color-bg-deep)', borderRadius: '2px', marginRight: '10px', border: '1px dashed var(--color-border)' }}></div>
                           )}
+                          {track.format === "digital" && track.file_path && (
+                            <div
+                              onClick={() => handlePlayPause(track)}
+                              style={{ cursor: 'pointer', marginRight: '8px', fontSize: '14px' }}
+                            >
+                              {playingTrackId === track.id ? '⏸️' : '▶️'}
+                            </div>
+                          )}
                           <div style={{ flex: 1, overflow: 'hidden' }}>
                             <div style={{ fontWeight: 'bold', color: 'var(--color-text-main)', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{track.title}</div>
                             <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -732,6 +767,7 @@ function App() {
           </div>
         </section>
       </div>
+      <audio ref={audioRef} onEnded={() => setPlayingTrackId(null)} style={{ display: 'none' }} />
     </>
   );
 }

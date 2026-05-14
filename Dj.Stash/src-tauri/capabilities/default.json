@@ -10,6 +10,7 @@
     "opener:default",
     "sql:default",
     "dialog:default",
-    "fs:default"
+    "fs:default",
+    "core:webview:default"
   ]
 }
