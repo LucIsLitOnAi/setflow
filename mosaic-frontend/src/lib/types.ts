@@ -10,6 +10,8 @@ export interface LocalImage {
   id: string;
   file: File;
   previewUrl: string;
+  isUnsupportedBrowserFormat?: boolean;
+  serverId?: string;
 }
 
 export interface OnboardingState {
@@ -31,4 +33,5 @@ export type OnboardingAction =
   | { type: 'SET_MAIN_IMAGE'; payload: LocalImage | null }
   | { type: 'ADD_TILE_IMAGES'; payload: LocalImage[] }
   | { type: 'REMOVE_TILE_IMAGE'; payload: string }
+  | { type: 'UPDATE_IMAGE_SERVER_ID'; payload: { localId: string; serverId: string; type: 'main' | 'tile' } }
   | { type: 'RESET' };

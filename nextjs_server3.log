@@ -1,0 +1,49 @@
+
+> mosaic-frontend@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 551ms
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /app/package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles:
+   * /app/mosaic-frontend/package-lock.json
+
+
+ GET / 200 in 763ms (next.js: 347ms, application-code: 415ms)
+[API/Upload] Received metadata: { filename: 'test_main.jpg', size: 24, type: 'image/jpeg' }
+ POST /api/upload 200 in 642ms (next.js: 116ms, application-code: 526ms)
+ GET / 200 in 83ms (next.js: 6ms, application-code: 77ms)
+[API/Upload] Received metadata: { filename: 'test_main.jpg', size: 24, type: 'image/jpeg' }
+ POST /api/upload 200 in 513ms (next.js: 4ms, application-code: 510ms)
+[API/Upload] Received metadata: { filename: 'test_tile.jpg', size: 24, type: 'image/jpeg' }
+ POST /api/upload 200 in 516ms (next.js: 5ms, application-code: 511ms)
+[API/Style] Received Style Generation Request: {
+  "quiz": {
+    "recipient": "family",
+    "vibe": "cinematic",
+    "occasion": "anniversary"
+  },
+  "mainImageId": "img_8gvzq3sj8xo",
+  "tileImageIds": [
+    "img_1uh0a7rdlmc"
+  ]
+}
+[API/Style] Received Style Generation Request: {
+  "quiz": {
+    "recipient": "family",
+    "vibe": "cinematic",
+    "occasion": "anniversary"
+  },
+  "mainImageId": "img_8gvzq3sj8xo",
+  "tileImageIds": [
+    "img_1uh0a7rdlmc"
+  ]
+}
+ POST /api/style 200 in 2.8s (next.js: 270ms, application-code: 2.5s)
+ POST /api/style 200 in 2.8s (next.js: 289ms, application-code: 2.5s)
+[?25h

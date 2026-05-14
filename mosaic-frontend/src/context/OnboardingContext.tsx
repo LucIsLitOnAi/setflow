@@ -55,6 +55,27 @@ const onboardingReducer = (state: OnboardingState, action: OnboardingAction): On
           tileImages: state.upload.tileImages.filter((img) => img.id !== action.payload),
         },
       };
+    case 'UPDATE_IMAGE_SERVER_ID':
+      if (action.payload.type === 'main' && state.upload.mainImage?.id === action.payload.localId) {
+        return {
+          ...state,
+          upload: {
+            ...state.upload,
+            mainImage: { ...state.upload.mainImage, serverId: action.payload.serverId }
+          }
+        };
+      } else if (action.payload.type === 'tile') {
+        return {
+          ...state,
+          upload: {
+            ...state.upload,
+            tileImages: state.upload.tileImages.map(img =>
+              img.id === action.payload.localId ? { ...img, serverId: action.payload.serverId } : img
+            )
+          }
+        };
+      }
+      return state;
     case 'RESET':
       // cleanup object URLs to prevent memory leaks
       if (state.upload.mainImage) {

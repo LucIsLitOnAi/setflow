@@ -16,8 +16,31 @@ const io = socketIo(server, {
 
 // Middleware
 app.use(cors());
+app.use(express.json());
 const frontendPath = path.resolve(__dirname, '../frontend');
 app.use(express.static(frontendPath));
+
+// Mock API Routes for Mosaic
+app.post('/api/upload', (req, res) => {
+  console.log('[API/Upload] Received metadata:', req.body);
+  const mockId = `img_${Math.random().toString(36).substring(2, 15)}`;
+  setTimeout(() => {
+    res.json({ success: true, id: mockId, message: 'Upload successful (mock)' });
+  }, 500);
+});
+
+app.post('/api/style', (req, res) => {
+  console.log('[API/Style] Received Style Generation Request:', JSON.stringify(req.body, null, 2));
+  setTimeout(() => {
+    res.json({
+      success: true,
+      message: 'Mosaic generation started successfully.',
+      jobId: `job_${Math.random().toString(36).substring(2, 15)}`,
+      mockUrl: 'https://example.com/mock-mosaic-result.jpg'
+    });
+  }, 2500);
+});
+
 
 // Data structure
 const rooms = {};

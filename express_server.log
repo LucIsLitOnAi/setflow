@@ -1,0 +1,31 @@
+
+> setflow-collab@1.0.0 start
+> node backend/server.js
+
+◇ injected env (0) from backend/.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+🎵 SetFlow Server running on http://localhost:3000
+Environment: undefined
+[API/Upload] Received metadata: { filename: 'test_main.jpg', size: 24, type: 'image/jpeg' }
+[API/Upload] Received metadata: { filename: 'test_tile.jpg', size: 24, type: 'image/jpeg' }
+[API/Style] Received Style Generation Request: {
+  "quiz": {
+    "recipient": "family",
+    "vibe": "cinematic",
+    "occasion": "anniversary"
+  },
+  "mainImageId": "img_xztgx74wcsp",
+  "tileImageIds": [
+    "img_tf4400y6rto"
+  ]
+}
+[API/Style] Received Style Generation Request: {
+  "quiz": {
+    "recipient": "family",
+    "vibe": "cinematic",
+    "occasion": "anniversary"
+  },
+  "mainImageId": "img_xztgx74wcsp",
+  "tileImageIds": [
+    "img_tf4400y6rto"
+  ]
+}
