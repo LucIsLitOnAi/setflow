@@ -766,18 +766,18 @@ function filtered(){
   return list;
 }
 
-function ren(){
-  const list=filtered();
-  document.getElementById('em').style.display=list.length?'none':'block';
-  const target = document.getElementById('tbd');
-  target.outerHTML = `<div id="tbd" style="display:flex; flex-wrap:wrap; gap:20px; padding:30px; justify-content:center;">` +
-    list.map(t => `<div class="neo-card" onclick="selT(${t.id})" style="position:relative; width:280px; padding:15px; display:flex; align-items:center; gap:15px; cursor:pointer;">
+function ren() {
+  const list = filtered();
+  document.getElementById('em').style.display = list.length ? 'none' : 'block';
+
+  document.getElementById('tbd').outerHTML = `<div id="tbd" style="display:flex; flex-wrap:wrap; gap:20px; padding:30px; justify-content:center;">` +
+    list.map((t, i) => `<div class="neo-card" onclick="selT(${t.id})" style="position:relative; width:280px; padding:15px; display:flex; align-items:center; gap:15px; cursor:pointer; background:#242424; border-radius:16px; box-shadow:6px 6px 12px rgba(0,0,0,0.5), -6px -6px 12px rgba(255,255,255,0.04);">
       <div style="width:50px; height:50px; border-radius:50%; overflow:hidden; border:2px solid #000; box-shadow:0 10px 20px rgba(0,0,0,0.8);">
-        ${t.cover ? `<img src="${t.cover}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;">${getIcon('ORBIT', 24)}</div>`}
+        ${t.cover ? `<img src="${t.cover}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;">🎵</div>`}
       </div>
       <div style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
-        <strong style="font-size:14px; white-space:nowrap; text-overflow:ellipsis;">${t.title}</strong>
-        <span style="font-size:11px; opacity:0.6; margin-top:2px;">${t.artist}</span>
+        <strong style="font-size:14px; white-space:nowrap; text-overflow:ellipsis; color:var(--accent-white);">${t.title}</strong>
+        <span style="font-size:11px; opacity:0.6; margin-top:2px; color:var(--accent-dim);">${t.artist}</span>
       </div>
       <div style="font-weight:bold; color:var(--signal-primary); font-size:12px;">${t.bpm || '--'}</div>
     </div>`).join('') + `</div>`;
@@ -909,23 +909,22 @@ function selVinyl(id){
   rvp();
 }
 
-function rvp(){
-  const v=sel;if(!v||!v.isVinyl)return;
-  const linked=v.linkedTrackId?tracks.find(t=>t.id===v.linkedTrackId):null;
+function rvp() {
+  const v = sel; if(!v) return;
   document.getElementById('pi').innerHTML = `
-  <div style="display:flex; align-items:center; width:100%; height:100%; position:relative; padding-left:55px;">
-    <div class="panel-cover vinyl-spin-active" style="position:absolute; left:-35px; width:80px; height:80px; border-radius:50%; border:3px solid #000; box-shadow: 0 10px 20px rgba(0,0,0,0.9); overflow:hidden;">
-      ${v.cover ? `<img src="${v.cover}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="width:100%;height:100%;background:#111;"></div>`}
-    </div>
-    <div style="flex:1; display:flex; flex-direction:column; justify-content:center; padding-right:15px;">
-      <strong style="font-size:14px; margin-bottom:3px;">${v.title}</strong>
-      <span style="font-size:11px; opacity:0.6;">${v.artist}</span>
-    </div>
-    <div style="display:flex; gap:12px; margin-right:20px; font-size:18px; cursor:pointer;">
-      <span>⏮</span><span style="color:var(--signal-primary);">▶</span><span>⏭</span>
-    </div>
-    <button onclick="closeP()" style="position:absolute; top:6px; right:10px; background:none; border:none; color:var(--accent-dim); cursor:pointer; font-size:16px;">×</button>
-  </div>`;
+    <div style="display:flex; align-items:center; width:100%; height:100%; position:relative; padding-left:55px;">
+      <div class="panel-cover vinyl-spin-active" style="position:absolute; left:-35px; width:80px; height:80px; border-radius:50%; border:3px solid #000; box-shadow: 0 10px 20px rgba(0,0,0,0.9); overflow:hidden;">
+        ${v.cover ? `<img src="${v.cover}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="width:100%;height:100%;background:#111;"></div>`}
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; justify-content:center; padding-right:15px;">
+        <strong style="font-size:14px; margin-bottom:3px; color:var(--accent-white);">${v.title || 'Track'}</strong>
+        <span style="font-size:11px; opacity:0.6; color:var(--accent-dim);">${v.artist || 'Artist'}</span>
+      </div>
+      <div style="display:flex; gap:12px; margin-right:20px; font-size:18px; cursor:pointer;">
+        <span>⏮</span><span style="color:var(--signal-primary);">▶</span><span>⏭</span>
+      </div>
+      <button onclick="closeP()" style="position:absolute; top:6px; right:10px; background:none; border:none; color:var(--accent-dim); cursor:pointer; font-size:16px;">×</button>
+    </div>`;
   document.getElementById('pnl').classList.add('open');
 }
 
