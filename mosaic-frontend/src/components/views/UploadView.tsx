@@ -25,18 +25,14 @@ export const UploadView = () => {
 
   const uploadToMockAPI = async (file: File, localId: string, type: 'main' | 'tile') => {
     try {
-      // Create a mock payload to avoid 413 Payload Too Large on our Mock backend.
-      // In production, we would use Presigned URLs here.
-      const payload = {
-        filename: file.name,
-        size: file.size,
-        type: file.type,
-      };
+      // Send actual file to the Next.js orchestrator route, which forwards to Python engine.
+      // (Mocking the real cloud upload)
+      const formData = new FormData();
+      formData.append('file', file);
 
-      const res = await fetch('http://localhost:3000/api/upload', {
+      const res = await fetch('/api/upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: formData,
       });
 
       const data = await res.json();
