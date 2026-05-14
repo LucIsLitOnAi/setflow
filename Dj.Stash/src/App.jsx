@@ -24,6 +24,8 @@ function App() {
   const [playingTrackId, setPlayingTrackId] = useState(null);
   const audioRef = useRef(null);
 
+  const [exportSuccess, setExportSuccess] = useState(false);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [filterFormat, setFilterFormat] = useState("all");
   const [sortBy, setSortBy] = useState("added");
@@ -180,7 +182,11 @@ function App() {
 
       const header = `SET: ${selectedSet.name}\nTRACKS: ${activeSetTracks.length}\n-----------------------------------\n`;
       await writeTextFile(filePath, header + trackListString);
-      alert("Set exported successfully!");
+
+      setExportSuccess(true);
+      setTimeout(() => {
+        setExportSuccess(false);
+      }, 2000);
     } catch (error) {
       console.error("Error exporting set:", error);
       alert("Failed to export set.");
@@ -411,7 +417,12 @@ function App() {
               </select>
             </div>
             <div id="track-list" className="track-list">
-              {filteredAndSortedTracks.map((track) => (
+              {filteredAndSortedTracks.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '30px', color: 'rgba(255,255,255,0.5)', fontSize: '13px', fontStyle: 'italic' }}>
+                  Keine Tracks gefunden. Füge Musik hinzu oder passe deine Suche an.
+                </div>
+              ) : (
+                filteredAndSortedTracks.map((track) => (
                 <div key={track.id} style={{ display: 'flex', alignItems: 'center', padding: '10px', borderBottom: '1px solid var(--color-border)', background: 'rgba(0,0,0,0.2)' }}>
                   {track.cover_url ? (
                     <img src={track.cover_url} alt="Cover" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', marginRight: '15px' }} />
@@ -422,7 +433,9 @@ function App() {
                     {track.format === "digital" && track.file_path && (
                       <div
                         onClick={() => handlePlayPause(track)}
-                        style={{ cursor: 'pointer', marginRight: '10px', fontSize: '16px' }}
+                              style={{ cursor: 'pointer', marginRight: '10px', fontSize: '16px', transition: 'all 0.2s ease', opacity: 0.8 }}
+                              onMouseOver={(e) => e.currentTarget.style.opacity = 1}
+                              onMouseOut={(e) => e.currentTarget.style.opacity = 0.8}
                       >
                         {playingTrackId === track.id ? '⏸️' : '▶️'}
                       </div>
@@ -551,7 +564,7 @@ function App() {
                     )}
                   </div>
                 </div>
-              ))}
+              )))}
             </div>
           </div>
 
@@ -633,8 +646,14 @@ function App() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                     <h3 style={{ color: 'var(--color-accent-steel)', margin: 0 }}>SET: {selectedSet.name}</h3>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button className="btn b-out" onClick={handleExportSet} style={{ padding: '4px 8px', fontSize: '11px' }}>EXPORT SET</button>
-                      <button className="btn b-out" onClick={closeSetDetail} style={{ padding: '4px 8px', fontSize: '11px' }}>BACK</button>
+                      <button
+                        className="btn b-out"
+                        onClick={handleExportSet}
+                        style={{ padding: '4px 8px', fontSize: '11px', transition: 'all 0.2s ease', backgroundColor: exportSuccess ? 'rgba(0,255,0,0.2)' : 'transparent', color: exportSuccess ? '#fff' : 'inherit' }}
+                      >
+                        {exportSuccess ? "Erfolgreich exportiert! ✅" : "EXPORT SET"}
+                      </button>
+                      <button className="btn b-out" onClick={closeSetDetail} style={{ padding: '4px 8px', fontSize: '11px', transition: 'all 0.2s ease' }}>BACK</button>
                     </div>
                   </div>
                   <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '15px' }}>
@@ -655,7 +674,9 @@ function App() {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {activeSetTracks.length === 0 ? (
-                      <div style={{ color: 'var(--color-text-muted)', fontSize: '12px', fontStyle: 'italic' }}>No tracks added yet. Click '+' in the library to add tracks.</div>
+                      <div style={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: '20px', fontSize: '12px', fontStyle: 'italic' }}>
+                        Dieses Set ist noch leer. Klicke auf das '+' in deiner Bibliothek, um Tracks hinzuzufügen.
+                      </div>
                     ) : (
                       activeSetTracks.map((track, index) => (
                         <div
@@ -679,10 +700,10 @@ function App() {
                         >
                           <div
                             onClick={() => handleRemoveTrackFromSet(track.id)}
-                            style={{ color: 'var(--color-text-muted)', cursor: 'pointer', padding: '0 6px', fontSize: '12px', fontWeight: 'bold' }}
+                            style={{ color: 'var(--color-text-muted)', cursor: 'pointer', padding: '0 6px', fontSize: '12px', fontWeight: 'bold', transition: 'all 0.2s ease' }}
                             title="Remove track"
-                            onMouseOver={(e) => e.target.style.color = '#ff4444'}
-                            onMouseOut={(e) => e.target.style.color = 'var(--color-text-muted)'}
+                            onMouseOver={(e) => { e.currentTarget.style.color = '#ff4444'; e.currentTarget.style.transform = 'scale(1.2)'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.color = 'var(--color-text-muted)'; e.currentTarget.style.transform = 'scale(1)'; }}
                           >
                             X
                           </div>
@@ -700,7 +721,9 @@ function App() {
                           {track.format === "digital" && track.file_path && (
                             <div
                               onClick={() => handlePlayPause(track)}
-                              style={{ cursor: 'pointer', marginRight: '8px', fontSize: '14px' }}
+                              style={{ cursor: 'pointer', marginRight: '8px', fontSize: '14px', transition: 'all 0.2s ease', opacity: 0.8 }}
+                              onMouseOver={(e) => e.currentTarget.style.opacity = 1}
+                              onMouseOut={(e) => e.currentTarget.style.opacity = 0.8}
                             >
                               {playingTrackId === track.id ? '⏸️' : '▶️'}
                             </div>
