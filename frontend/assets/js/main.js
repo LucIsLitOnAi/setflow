@@ -745,6 +745,17 @@ function coverCell(t){
   return`<div class="cover-vinyl"><span class="icon-wrapper">${getIcon('ORBIT',38)}</span></div>`;
 }
 
+window.spawnNotes = function() {
+  setInterval(() => {
+    const note = document.createElement('div');
+    note.className = 'floating-note';
+    note.textContent = ['🎵', '🎶', '🎼'][Math.floor(Math.random() * 3)];
+    note.style.left = (10 + Math.random() * 80) + 'vw';
+    document.body.appendChild(note);
+    setTimeout(() => note.remove(), 8000);
+  }, 2000);
+};
+
 function filtered(){
   let list=tracks;
   if(fil==='untagged')list=list.filter(t=>!t.role);
@@ -758,20 +769,18 @@ function filtered(){
 function ren(){
   const list=filtered();
   document.getElementById('em').style.display=list.length?'none':'block';
-  document.getElementById('tbd').innerHTML=list.map((t,i)=>`
-    <tr data-track-id="${t.id}" onclick="selT(${t.id})" class="${sel?.id===t.id?'sel':''}${t.isGhost?' ghost-row':''}"${t.isGhost?` ondragover="HydrationManager._onDragOver(event,${t.id})" ondragleave="HydrationManager._onDragLeave(event,${t.id})" ondrop="HydrationManager._onDrop(event,${t.id})"`:''}>
-      <td class="td-num tno">${String(i+1).padStart(2,'0')}</td>
-      <td class="td-cover">${coverCell(t)}</td>
-      <td>
-        <div class="tn" style="display:flex;align-items:center;gap:4px">${esc(t.title)}${t.isGhost?`<span class="ghost-badge" title="Click to link real file — or drag & drop audio onto this row" onclick="event.stopPropagation();HydrationManager._promptFile(${t.id})">⇡ GHOST</span>`:''}${t.isOwn?` <span style="font-size:9px;color:var(--green);font-family:var(--M);letter-spacing:1px">★ EIGEN</span>`:''}${sel?.id===t.id?`<span class="neural-match-node" onclick="event.stopPropagation();nmShow(event,${t.id})" title="NEURAL MATCH"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="2" fill="var(--signal-primary)"/><circle cx="2" cy="3" r="1.2" fill="var(--signal-primary)" opacity=".7"/><circle cx="12" cy="3" r="1.2" fill="var(--signal-primary)" opacity=".7"/><circle cx="2" cy="11" r="1.2" fill="var(--signal-primary)" opacity=".7"/><circle cx="12" cy="11" r="1.2" fill="var(--signal-primary)" opacity=".7"/><line x1="7" y1="5" x2="2.8" y2="3.8" stroke="var(--signal-primary)" stroke-width=".8" opacity=".5"/><line x1="7" y1="5" x2="11.2" y2="3.8" stroke="var(--signal-primary)" stroke-width=".8" opacity=".5"/><line x1="7" y1="9" x2="2.8" y2="10.2" stroke="var(--signal-primary)" stroke-width=".8" opacity=".5"/><line x1="7" y1="9" x2="11.2" y2="10.2" stroke="var(--signal-primary)" stroke-width=".8" opacity=".5"/></svg></span>`:''}</div>
-        <div class="ta">${esc(t.artist)}</div>
-      </td>
-      <td>${genreChips(t.genres)}</td>
-      <td class="tbpm ${bc(t.bpm)}">${t.bpm||'—'}</td>
-      <td><div class="eb"><div class="et"><div class="ef" style="width:${t.energy||0}%;background:${ec(t.energy)}"></div></div><span class="ev">${t.energy||'—'}</span></div></td>
-      <td>${cr(t.role)}</td>
-      <td>${licBadge(t.lic)}</td>
-    </tr>`).join('');
+  const target = document.getElementById('tbd');
+  target.outerHTML = `<div id="tbd" style="display:flex; flex-wrap:wrap; gap:20px; padding:30px; justify-content:center;">` +
+    list.map(t => `<div class="neo-card" onclick="selT(${t.id})" style="position:relative; width:280px; padding:15px; display:flex; align-items:center; gap:15px; cursor:pointer;">
+      <div style="width:50px; height:50px; border-radius:50%; overflow:hidden; border:2px solid #000; box-shadow:0 10px 20px rgba(0,0,0,0.8);">
+        ${t.cover ? `<img src="${t.cover}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;">${getIcon('ORBIT', 24)}</div>`}
+      </div>
+      <div style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+        <strong style="font-size:14px; white-space:nowrap; text-overflow:ellipsis;">${t.title}</strong>
+        <span style="font-size:11px; opacity:0.6; margin-top:2px;">${t.artist}</span>
+      </div>
+      <div style="font-weight:bold; color:var(--signal-primary); font-size:12px;">${t.bpm || '--'}</div>
+    </div>`).join('') + `</div>`;
 }
 
 function sts(){
@@ -903,28 +912,20 @@ function selVinyl(id){
 function rvp(){
   const v=sel;if(!v||!v.isVinyl)return;
   const linked=v.linkedTrackId?tracks.find(t=>t.id===v.linkedTrackId):null;
-  document.getElementById('pi').innerHTML=`
-    <div class="panel-cover" style="cursor:default;background:var(--paper3);display:flex;align-items:center;justify-content:center">
-      ${v.cover?`<img src="${v.cover}" style="width:100%;height:100%;object-fit:cover">`
-        :`<span class="icon-wrapper">${getIcon('ORBIT',80)}</span>`}
+  document.getElementById('pi').innerHTML = `
+  <div style="display:flex; align-items:center; width:100%; height:100%; position:relative; padding-left:55px;">
+    <div class="panel-cover vinyl-spin-active" style="position:absolute; left:-35px; width:80px; height:80px; border-radius:50%; border:3px solid #000; box-shadow: 0 10px 20px rgba(0,0,0,0.9); overflow:hidden;">
+      ${v.cover ? `<img src="${v.cover}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="width:100%;height:100%;background:#111;"></div>`}
     </div>
-    <button class="px" onclick="closeP()" style="top:8px;right:8px">×</button>
-    <div class="p-label">Vinyl Record</div>
-    <div class="p-name">${v.title}</div>
-    <div class="p-art">${v.artist}</div>
-    <div class="pr"><span class="pl">Label</span><span class="pv">${v.label||'—'}</span></div>
-    <div class="pr"><span class="pl">Year</span><span class="pv">${v.year||'—'}</span></div>
-    <div class="sl2">Digital Link</div>
-    ${linked
-      ?`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--rule);cursor:pointer" onclick="selT(${linked.id})">
-          <div style="width:26px;height:26px;flex-shrink:0">${coverCell(linked)}</div>
-          <div style="flex:1;min-width:0;font-size:11px;font-family:var(--M);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${linked.title}</div>
-          <span class="badge-digital">D</span>
-        </div>
-        <button class="btn b-out" style="margin-top:8px;width:100%" onclick="unlinkVinyl(${v.id})">Remove Link</button>`
-      :`<div style="color:var(--ink3);font-size:11px;font-family:var(--S);padding:6px 0">No digital track linked.</div>
-        <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(v.artist+' '+v.title)}" target="_blank" class="btn b-out" style="margin-top:6px;width:100%;justify-content:center;text-decoration:none">▶ Pre-listen on YouTube</a>`}
-  `;
+    <div style="flex:1; display:flex; flex-direction:column; justify-content:center; padding-right:15px;">
+      <strong style="font-size:14px; margin-bottom:3px;">${v.title}</strong>
+      <span style="font-size:11px; opacity:0.6;">${v.artist}</span>
+    </div>
+    <div style="display:flex; gap:12px; margin-right:20px; font-size:18px; cursor:pointer;">
+      <span>⏮</span><span style="color:var(--signal-primary);">▶</span><span>⏭</span>
+    </div>
+    <button onclick="closeP()" style="position:absolute; top:6px; right:10px; background:none; border:none; color:var(--accent-dim); cursor:pointer; font-size:16px;">×</button>
+  </div>`;
   document.getElementById('pnl').classList.add('open');
 }
 
@@ -1472,6 +1473,7 @@ function initIcons(){
 }
 load();sts();buildSet();authUpdateUI();initIcons();
 if(authToken) connectSocket();
+spawnNotes();
 function checkLicenses(){const warn=tracks.filter(t=>t.lic==='none'||t.lic==='unknown');if(!warn.length){toast('All licensed ✓','grn');return;}const html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px"><div style="background:var(--paper2);padding:12px;border-left:4px solid var(--green)"><div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3)">Compliant</div><div style="font-size:24px;font-weight:600;color:var(--green)">'+tracks.filter(t=>t.lic!=='none'&&t.lic!=='unknown').length+'</div></div></div>';document.getElementById('lic-modal-body').innerHTML=html;if(!document.getElementById('licmod')){const m=document.createElement('div');m.id='licmod';m.className='modal';m.innerHTML='<div class="modal-content" style="max-width:380px"><button style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:20px;cursor:pointer" onclick="closeCheckLic()">×</button><div style="font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:16px">License Status</div><div id="lic-modal-body"></div></div>';document.body.appendChild(m);}document.getElementById('licmod').classList.add('open');}
 function openGigPlanner(id,role){sel=tracks.find(x=>x.id===id);if(!sel)return;if(!document.getElementById('gig-modal')){const m=document.createElement('div');m.id='gig-modal';m.className='modal';m.innerHTML='<div class="modal-content" style="max-width:380px;position:relative"><div id="gig-modal-body"></div></div>';document.body.appendChild(m);}const html='<button style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:20px;cursor:pointer" onclick="closeGigPlanner()">×</button><div style="font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:12px">'+esc(sel.title)+' — '+esc(role)+'</div><div style="margin-bottom:10px"><input type="date" id="gig-date" style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="margin-bottom:10px"><input type="text" id="gig-venue" placeholder="Venue..." style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="margin-bottom:10px"><input type="time" id="gig-time" style="width:100%;padding:6px;border:1px solid var(--rule2);font-family:var(--M);color:var(--ink)"></div><div style="display:flex;gap:8px"><button class="btn b-out" style="flex:1" onclick="closeGigPlanner()">Cancel</button><button class="btn b-grn" style="flex:1" onclick="saveGigPlan()">Save</button></div>';document.getElementById('gig-modal-body').innerHTML=html;document.getElementById('gig-modal').classList.add('open');}
 function closeGigPlanner(){const m=document.getElementById('gig-modal');if(m)m.classList.remove('open');}
