@@ -9,7 +9,9 @@ import { useEffect, useState } from 'react';
 
 export const ProcessingView = () => {
   const { state } = useOnboarding();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'redirecting'>('loading');
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [zipUrl, setZipUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -32,6 +34,8 @@ export const ProcessingView = () => {
 
         if (isMounted) {
           if (data.success) {
+            setJobId(data.jobId);
+            setZipUrl(data.zipUrl);
             setStatus('success');
           } else {
             setStatus('error');
@@ -48,7 +52,28 @@ export const ProcessingView = () => {
     return () => { isMounted = false; };
   }, [state]);
 
-  if (status === 'success') {
+  const handleCheckout = async () => {
+    setStatus('redirecting');
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, zipUrl }),
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setStatus('error');
+      }
+    } catch (e) {
+      console.error('Checkout error:', e);
+      setStatus('error');
+    }
+  };
+
+  if (status === 'success' || status === 'redirecting') {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -62,12 +87,29 @@ export const ProcessingView = () => {
         </div>
         <div className="space-y-4">
           <h2 className="text-3xl sm:text-4xl font-semibold">
-            Success!
+            Mosaic Ready!
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-lg">
-            Your images have been submitted and the AI is working its magic. We will notify you once it&apos;s ready.
+            Your high-resolution mosaic and the print-ready solution grid (ZIP) are generated. Proceed to checkout to download your digital kit.
           </p>
         </div>
+
+        <motion.button
+          onClick={handleCheckout}
+          disabled={status === 'redirecting'}
+          whileHover={status !== 'redirecting' ? { scale: 1.05 } : {}}
+          whileTap={status !== 'redirecting' ? { scale: 0.95 } : {}}
+          className="mt-8 px-10 py-4 bg-black text-white dark:bg-white dark:text-black rounded-full text-xl font-medium transition-all hover:shadow-lg flex items-center gap-2"
+        >
+          {status === 'redirecting' ? (
+             <>
+               <Loader2 className="w-6 h-6 animate-spin" />
+               Redirecting to Stripe...
+             </>
+          ) : (
+            'Unlock Digital Kit ($19.99)'
+          )}
+        </motion.button>
       </motion.div>
     );
   }

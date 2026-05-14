@@ -24,3 +24,4 @@ SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON (src/compon
 [browser] Error starting mosaic generation: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
 SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON (src/components/views/ProcessingView.tsx:41:17)
  GET / 200 in 82ms (next.js: 5ms, application-code: 76ms)
+[?25h

@@ -14,6 +14,15 @@ app = FastAPI()
 TMP_DIR = "/tmp/mosaic_uploads"
 os.makedirs(TMP_DIR, exist_ok=True)
 
+from fastapi.responses import FileResponse
+
+@app.get("/download/{filename}")
+async def download_file(filename: str):
+    file_path = os.path.join(TMP_DIR, filename)
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type='application/zip', filename=filename)
+    return JSONResponse(status_code=404, content={"error": "File not found"})
+
 @app.post("/api/upload")
 async def upload_image(file: UploadFile = File(...)):
     """Mock Cloud Storage Upload - saves to /tmp and returns a mock ID/URL"""
@@ -82,14 +91,39 @@ async def process_style(
                 "match_score": round(np.random.uniform(0.75, 0.99), 2)
             })
 
+        # ---------------------------------------------------------
+        # Step 3: GENERATE SOLUTION GRID (Bild 31) & ZIP ARCHIVE
+        # ---------------------------------------------------------
+        print("[Python Engine/Style] Generating Solution Grid & Packing ZIP Archive...")
+        import zipfile
+
+        job_id = f"job_{uuid.uuid4().hex[:12]}"
+        zip_filename = f"{job_id}_mosaic_kit.zip"
+        zip_path = os.path.join(TMP_DIR, zip_filename)
+
+        # Create a dummy solution grid image using OpenCV
+        solution_img = np.zeros((800, 800, 3), dtype=np.uint8)
+        solution_img[:] = (200, 200, 200) # light gray background
+        cv2.putText(solution_img, "Mosaic Solution Grid", (50, 400), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 3)
+        solution_img_path = os.path.join(TMP_DIR, f"{job_id}_solution.jpg")
+        cv2.imwrite(solution_img_path, solution_img)
+
+        # Pack into ZIP
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            zipf.write(solution_img_path, arcname="solution_grid.jpg")
+            # In a real app, we would also add the styled main image and all tiles here
+
+        zip_url = f"http://localhost:8000/download/{zip_filename}"
+
         print("[Python Engine/Style] Processing Complete!")
 
         return {
             "success": True,
             "message": "Mosaic generation completed successfully.",
-            "jobId": f"job_{uuid.uuid4().hex[:12]}",
+            "jobId": job_id,
             "resultUrl": styled_image_url,
-            "gridMapping": grid_mapping
+            "gridMapping": grid_mapping,
+            "zipUrl": zip_url
         }
 
     except Exception as e:

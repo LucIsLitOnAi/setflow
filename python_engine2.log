@@ -1,0 +1,26 @@
+INFO:     Started server process [277382]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+[Python Engine/Upload] Saved file test_main.jpg as img_e9010d080fe9
+INFO:     127.0.0.1:37680 - "POST /api/upload HTTP/1.1" 200 OK
+[Python Engine/Upload] Saved file test_tile.jpg as img_1bcb23f7505d
+INFO:     127.0.0.1:37680 - "POST /api/upload HTTP/1.1" 200 OK
+[Python Engine/Style] Received Request - Vibe: cinematic, Main ID: img_e9010d080fe9
+[Python Engine/Style] Received 1 tile IDs
+[Python Engine/Style] Triggering Replicate API (Mock)...
+[Python Engine/Style] Running OpenCV Smart Grid Algorithm...
+[Python Engine/Style] Generating Solution Grid & Packing ZIP Archive...
+[Python Engine/Style] Processing Complete!
+INFO:     127.0.0.1:37680 - "POST /api/style HTTP/1.1" 200 OK
+[Python Engine/Style] Received Request - Vibe: cinematic, Main ID: img_e9010d080fe9
+[Python Engine/Style] Received 1 tile IDs
+[Python Engine/Style] Triggering Replicate API (Mock)...
+[Python Engine/Style] Running OpenCV Smart Grid Algorithm...
+[Python Engine/Style] Generating Solution Grid & Packing ZIP Archive...
+[Python Engine/Style] Processing Complete!
+INFO:     127.0.0.1:37682 - "POST /api/style HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [277382]

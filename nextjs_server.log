@@ -1,6 +1,6 @@
 
 > mosaic-frontend@0.1.0 dev
-> next dev
+> next dev -p 3000
 
 ▲ Next.js 16.2.6 (Turbopack)
 - Local:         http://localhost:3000
@@ -13,12 +13,23 @@
  Detected additional lockfiles:
    * /app/mosaic-frontend/package-lock.json
 
-⨯ Another next dev server is already running.
 
-- Local:        http://localhost:3001
-- PID:          153946
-- Dir:          /app/mosaic-frontend
-- Log:          .next/dev/logs/next-development.log
+ GET / 200 in 1199ms (next.js: 763ms, application-code: 436ms)
+[Next API/Upload] Forwarding file to Python Engine...
+ POST /api/upload 200 in 178ms (next.js: 125ms, application-code: 53ms)
+[Next API/Upload] Forwarding file to Python Engine...
+ POST /api/upload 200 in 30ms (next.js: 7ms, application-code: 23ms)
+[Next API/Style] Forwarding styling request to Python Engine...
+[Next API/Style] Forwarding styling request to Python Engine...
+ POST /api/style 200 in 3.6s (next.js: 48ms, application-code: 3.6s)
+ POST /api/style 200 in 7.1s (next.js: 5ms, application-code: 7.1s)
+[Stripe API] Creating checkout session for Job: job_26277a6eb9af
+ POST /api/checkout 200 in 374ms (next.js: 348ms, application-code: 26ms)
+ GET /checkout/success?jobId=job_26277a6eb9af&zipUrl=http%3A%2F%2Flocalhost%3A8000%2Fmock-download%2Fmosaic-final.zip 200 in 1676ms (next.js: 1500ms, application-code: 175ms)
 
-Run kill 153946 to stop it.
-[?25h
+================= MOCK SMS DISPATCH =================
+To: +49123456789
+Message: Your Mosaic AI Print Kit is ready! Download it here: http://localhost:8000/mock-download/mosaic-final.zip
+=====================================================
+
+ POST /api/sms 200 in 1013ms (next.js: 200ms, application-code: 814ms)
