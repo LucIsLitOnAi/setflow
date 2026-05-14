@@ -1,0 +1,37 @@
+# Mosaic AI Production Environment Variables Template
+# ----------------------------------------------------
+# IMPORTANT: DO NOT commit your actual live keys to GitHub.
+# Use this template to gather your keys before injecting them
+# into Vercel and Render.com via their respective dashboards.
+
+# ====================================================
+# FOR RENDER.COM (Python Microservice - render.yaml)
+# ====================================================
+# Replicate API Key for Stable Diffusion Image-to-Image styling
+REPLICATE_API_TOKEN=
+
+# ====================================================
+# FOR VERCEL (Next.js Frontend - mosaic-frontend/)
+# ====================================================
+
+# The production URL of the Python Engine deployed on Render.com
+# (e.g., https://mosaic-python-engine.onrender.com)
+PYTHON_ENGINE_URL=
+
+# Stripe Live Keys for Payment Wall
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+
+# Twilio Keys for SMS Delivery Fallback
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
+
+# Vercel Blob / AWS S3 (For storing the raw uploads)
+# VERCEL_BLOB_TOKEN=
+# or AWS equivalents:
+# AWS_ACCESS_KEY_ID=
+# AWS_SECRET_ACCESS_KEY=
+# AWS_REGION=
+# AWS_BUCKET_NAME=

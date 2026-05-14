@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: mosaic-python-engine
+    env: python
+    rootDir: python-engine
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.1
+      # Note: Replicate API token will be needed here in production
+      # - key: REPLICATE_API_TOKEN
+      #   sync: false
